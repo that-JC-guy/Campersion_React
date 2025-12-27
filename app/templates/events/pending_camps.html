@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Pending Camp Join Requests - Campersion{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Page Header -->
+        <div class="mb-4">
+            <h1><i class="bi bi-calendar-plus me-2"></i>Pending Camp Join Requests</h1>
+            <p class="text-muted">Review and approve camps requesting to join your events</p>
+        </div>
+
+        {% if pending_requests %}
+            <div class="card shadow-lg">
+                <div class="card-body p-4">
+                    <h5 class="card-title text-warning mb-4">
+                        <i class="bi bi-hourglass-split me-2"></i>{{ pending_requests|length }} Pending Request{{ 's' if pending_requests|length != 1 else '' }}
+                    </h5>
+
+                    <div class="list-group list-group-flush">
+                        {% for request in pending_requests %}
+                            <div class="list-group-item">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h6 class="mb-1">
+                                            <strong>{{ request.camp.name }}</strong>
+                                        </h6>
+                                        <p class="mb-1 text-muted">
+                                            <i class="bi bi-calendar-event me-1"></i>
+                                            <a href="{{ url_for('events.view_event', event_id=request.event.id) }}" class="text-decoration-none">
+                                                {{ request.event.title }}
+                                            </a>
+                                        </p>
+                                        {% if request.camp.description %}
+                                            <p class="mb-1 text-muted small">{{ request.camp.description }}</p>
+                                        {% endif %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-clock me-1"></i>Requested {{ request.requested_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                        </small>
+                                    </div>
+                                    <div class="col-md-4 text-end mt-3 mt-md-0">
+                                        <form method="POST" action="{{ url_for('camps.approve_camp', event_id=request.event_id, camp_id=request.camp_id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-success btn-sm me-2">
+                                                <i class="bi bi-check-circle me-1"></i>Approve
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('camps.reject_camp', event_id=request.event_id, camp_id=request.camp_id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to reject this camp join request?');">
+                                                <i class="bi bi-x-circle me-1"></i>Reject
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="card shadow-lg">
+                <div class="card-body p-5">
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-calendar-plus display-1"></i>
+                        <h3 class="mt-4 mb-3">No Pending Camp Join Requests</h3>
+                        <p class="mb-4">You're all caught up! There are no pending camp join requests for your events.</p>
+                        <a href="{{ url_for('events.list_events') }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-calendar-event me-2"></i>View My Events
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Back to Profile -->
+        <div class="mt-4">
+            <a href="{{ url_for('main.view_profile') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Back to Profile
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block title %}{{ camp.name }} - Campersion{% endblock %}
+
+{% block content %}
+<!-- Back Button -->
+<div class="mb-3">
+    <a href="{{ url_for('camps.list_camps') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>
+        Back to Camps
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Camp Details Card -->
+        <div class="card shadow-lg">
+            <div class="card-body p-5">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h1>{{ camp.name }}</h1>
+                        <p class="text-muted mb-2">
+                            <i class="bi bi-person-circle me-2"></i>
+                            Created by {{ camp.creator.display_name }}{% if camp.creator.show_pronouns and camp.creator.pronouns %} <small>({{ camp.creator.pronouns }})</small>{% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Camp Information -->
+                <div class="mb-4">
+                    <h5 class="text-primary mb-3">
+                        <i class="bi bi-info-circle me-2"></i>Camp Information
+                    </h5>
+
+                    <!-- Capacity -->
+                    <div class="mb-3">
+                        <h6><i class="bi bi-people me-2"></i>Capacity:</h6>
+                        <p>
+                            <span class="badge bg-secondary me-2">{{ camp.max_sites }} sites</span>
+                            <span class="badge bg-info">{{ camp.max_people }} people</span>
+                        </p>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <h6><i class="bi bi-card-text me-2"></i>Description:</h6>
+                        <p class="text-muted">{{ camp.description }}</p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Amenities -->
+                <div class="mb-4">
+                    <h5 class="text-primary mb-3">
+                        <i class="bi bi-star me-2"></i>Amenities
+                    </h5>
+
+                    {% if camp.amenities_list %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for amenity in camp.amenities_list %}
+                                <span class="badge bg-success fs-6">
+                                    <i class="bi bi-check-circle me-1"></i>{{ amenity }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No amenities listed</p>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                <!-- Camp Membership Section -->
+                <div class="mb-4">
+                    <h5 class="text-primary mb-3">
+                        <i class="bi bi-people me-2"></i>Camp Membership
+                    </h5>
+
+                    {% if current_user.is_authenticated %}
+                        <!-- Request to Join Button (for non-members) -->
+                        {% if not user_membership %}
+                            <div class="mb-3">
+                                <form method="POST" action="{{ url_for('camps.request_membership', camp_id=camp.id) }}">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-person-plus me-2"></i>Request to Join Camp
+                                    </button>
+                                </form>
+                            </div>
+                        {% else %}
+                            <!-- Membership Status Alerts -->
+                            {% if user_membership.status == AssociationStatus.PENDING.value %}
+                                <div class="alert alert-warning" role="alert">
+                                    <i class="bi bi-clock-history me-2"></i>
+                                    <strong>Membership Pending:</strong> Your request to join this camp is awaiting approval.
+                                </div>
+                            {% elif user_membership.status == AssociationStatus.APPROVED.value %}
+                                <div class="alert alert-success" role="alert">
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    <strong>You are a member of this camp</strong>
+                                    {% if user_membership.role == CampMemberRole.MANAGER.value %}
+                                        <span class="badge bg-primary ms-2">Camp Manager</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary ms-2">Member</span>
+                                    {% endif %}
+                                </div>
+                            {% elif user_membership.status == AssociationStatus.REJECTED.value %}
+                                <div class="alert alert-danger" role="alert">
+                                    <i class="bi bi-x-circle me-2"></i>
+                                    <strong>Membership Rejected:</strong> Your request to join this camp was not approved.
+                                </div>
+                            {% endif %}
+                        {% endif %}
+
+                        <!-- Manage Members Button (for users who can approve members) -->
+                        {% if current_user.can_approve_camp_members(camp.id) %}
+                            <div class="mb-3">
+                                <a href="{{ url_for('camps.manage_members', camp_id=camp.id) }}" class="btn btn-primary">
+                                    <i class="bi bi-gear me-2"></i>Manage Members
+                                    {% if pending_count > 0 %}
+                                        <span class="badge bg-warning text-dark ms-2">{{ pending_count }} pending</span>
+                                    {% endif %}
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+
+                    <!-- List of Approved Members (visible to everyone) -->
+                    {% set approved_members = camp.get_approved_members() %}
+                    {% if approved_members %}
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-subtitle mb-3 text-muted">
+                                    <i class="bi bi-people-fill me-2"></i>Members ({{ approved_members|length }})
+                                </h6>
+                                <div class="row">
+                                    {% for membership in approved_members %}
+                                        <div class="col-md-6 mb-2">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-person-circle me-2"></i>
+                                                <span>{{ membership.user.display_name }}{% if membership.user.show_pronouns and membership.user.pronouns %} <small class="text-muted">({{ membership.user.pronouns }})</small>{% endif %}</span>
+                                                {% if membership.role == CampMemberRole.MANAGER.value %}
+                                                    <span class="badge bg-primary ms-2">Manager</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No members yet.</p>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                <!-- Request to Join Event Form (for camp managers) -->
+                {% if current_user.is_authenticated and current_user.is_camp_manager(camp.id) %}
+                    <div class="mb-4">
+                        <h5 class="text-primary mb-3">
+                            <i class="bi bi-plus-circle me-2"></i>Request to Join Event
+                        </h5>
+
+                        {% if approved_events|length > 0 %}
+                            <div class="card bg-light border-success">
+                                <div class="card-body">
+                                    <p class="mb-3"><strong>Select an event to request your camp to join:</strong></p>
+                                    <form method="POST" id="request-event-form">
+                                        <div class="row g-2">
+                                            <div class="col-md-8">
+                                                <select name="event_id" id="event_id" class="form-select" required>
+                                                    <option value="">Choose an event...</option>
+                                                    {% for event in approved_events %}
+                                                        <option value="{{ event.id }}">
+                                                            {{ event.title }} ({{ event.start_date.strftime('%B %d, %Y') }})
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <button type="submit" class="btn btn-success w-100">
+                                                    <i class="bi bi-send me-1"></i> Send Request
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                    <script>
+                                        document.getElementById('request-event-form').addEventListener('submit', function(e) {
+                                            e.preventDefault();
+                                            const eventId = document.getElementById('event_id').value;
+                                            if (eventId) {
+                                                this.action = "{{ url_for('camps.request_event', camp_id=camp.id, event_id=0) }}".replace('/0', '/' + eventId);
+                                                this.submit();
+                                            }
+                                        });
+                                    </script>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>No events available:</strong> There are currently no approved events you can join. Check back later or ask an event manager to create and approve an event!
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+                {% endif %}
+
+                <!-- Associated Events -->
+                <div class="mb-4">
+                    <h5 class="text-primary mb-3">
+                        <i class="bi bi-calendar-event me-2"></i>Associated Events
+                    </h5>
+
+                    {% set approved_associations = camp.event_associations.filter_by(status=AssociationStatus.APPROVED.value).all() %}
+                    {% if approved_associations %}
+                        <div class="row">
+                            {% for association in approved_associations %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ association.event.title }}</h6>
+                                            <p class="card-text text-muted">
+                                                <small>
+                                                    <i class="bi bi-calendar"></i>
+                                                    {{ association.event.start_date.strftime('%B %d, %Y') }}
+                                                    {% if association.event.start_date != association.event.end_date %}
+                                                        - {{ association.event.end_date.strftime('%B %d, %Y') }}
+                                                    {% endif %}
+                                                    <br>
+                                                    <i class="bi bi-geo-alt"></i> <strong>Event:</strong> {{ association.event.location if association.event.location else 'Location TBD' }}
+                                                    <br>
+                                                    <i class="bi bi-house-door"></i> <strong>Camp:</strong>
+                                                    {% if association.location %}
+                                                        {{ association.location }}
+                                                    {% else %}
+                                                        <span class="text-warning">Not set</span>
+                                                    {% endif %}
+                                                    {% if current_user.is_authenticated and current_user.is_camp_manager(camp.id) %}
+                                                        <a href="{{ url_for('camps.edit_camp_location', association_id=association.id) }}"
+                                                           class="ms-2" title="Edit camp location">
+                                                            <i class="bi bi-pencil-square"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                </small>
+                                            </p>
+                                            <a href="{{ url_for('events.view_event', event_id=association.event.id) }}"
+                                               class="btn btn-sm btn-outline-primary">
+                                                View Event
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Not associated with any events yet.</p>
+                    {% endif %}
+
+                    <!-- Pending Requests -->
+                    {% set pending_events = camp.event_associations.filter_by(status=AssociationStatus.PENDING.value).all() %}
+                    {% if pending_events %}
+                        <div class="alert alert-warning mt-3" role="alert">
+                            <h6><i class="bi bi-clock-history me-2"></i>Pending Requests:</h6>
+                            <ul class="mb-0">
+                                {% for association in pending_events %}
+                                    <li><strong>{{ association.event.title }}</strong> - Awaiting event creator approval</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                <!-- Metadata -->
+                <div class="mb-4">
+                    <small class="text-muted">
+                        <strong>Created:</strong> {{ camp.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                        <br>
+                        <strong>Last Updated:</strong> {{ camp.updated_at.strftime('%B %d, %Y at %I:%M %p') }}
+                    </small>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex gap-2 flex-wrap">
+                    {% if current_user.is_authenticated and (camp.creator_id == current_user.id or current_user.is_site_admin_or_higher) %}
+                        <a href="{{ url_for('camps.edit_camp', camp_id=camp.id) }}" class="btn btn-primary">
+                            <i class="bi bi-pencil-square"></i> Edit Camp
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shared Inventory Sidebar -->
+    <div class="col-lg-4">
+        <div class="card shadow-lg sticky-top" style="top: 1rem; z-index: 100;">
+            <div class="card-body">
+                <h5 class="card-title text-primary mb-3">
+                    <i class="bi bi-box-seam me-2"></i>Shared Camp Inventory
+                </h5>
+
+                {% if shared_inventory %}
+                    <div class="list-group list-group-flush">
+                        {% for item in shared_inventory %}
+                            <div class="list-group-item px-0 py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="flex-grow-1 me-2">
+                                        <strong>{{ item.name }}</strong>
+                                        <small class="text-muted d-block">
+                                            <i class="bi bi-person-circle me-1"></i>{{ item.owners }}{% if item.description %} - {{ item.description }}{% endif %}
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill flex-shrink-0">{{ item.total_quantity }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-box display-4"></i>
+                        <p class="mt-2 mb-0">No shared inventory yet</p>
+                        <small>Members can share their gear by marking items in their inventory</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

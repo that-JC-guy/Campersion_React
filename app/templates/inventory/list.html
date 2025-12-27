@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}My Inventory - Campersion{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-box-seam"></i> My Inventory</h1>
+            <a href="{{ url_for('main.add_inventory') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Item
+            </a>
+        </div>
+
+        <!-- Quick Add Buttons -->
+        <div class="card shadow mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-lightning"></i> Quick Add Common Items
+                </h5>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='tent') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-house-add"></i> Tent
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='canopy') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-umbrella"></i> Canopy
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='table') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-table"></i> Table
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='chairs') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-person-standing"></i> Camp Chairs
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='cooler') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-snow"></i> Cooler
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='grill') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-fire"></i> Grill
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='sleeping-bag') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-moon-stars"></i> Sleeping Bag
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='cot') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-hospital"></i> Cot
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='generator') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-lightning-charge"></i> Generator
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='lights') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-lightbulb"></i> Lights
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='sound-system') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-music-note-beamed"></i> Sound System
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='art') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-palette"></i> Art Installation
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='shade') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-tree"></i> Shade Structure
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='fire-pit') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-fire"></i> Fire Pit
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='tools') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-wrench"></i> Tools
+                    </a>
+                    <a href="{{ url_for('main.quick_add_inventory', item_name='first-aid') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-bandaid"></i> First Aid Kit
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Items List -->
+        <form method="POST" action="{{ url_for('main.update_inventory_bulk') }}" id="inventory-form">
+            <div class="card shadow">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th class="text-center" style="width: 120px;">Quantity</th>
+                                    <th class="text-center" style="width: 80px;">Shared</th>
+                                    <th class="text-end" style="width: 80px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- New Item Row -->
+                                <tr class="table-success">
+                                    <td>
+                                        <input type="text"
+                                               name="new_item_name"
+                                               class="form-control form-control-sm"
+                                               placeholder="Enter new item name...">
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="number"
+                                               name="new_item_quantity"
+                                               value="1"
+                                               min="0"
+                                               class="form-control form-control-sm text-center"
+                                               style="width: 80px; display: inline-block;">
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="checkbox"
+                                               name="new_item_is_shared"
+                                               class="form-check-input"
+                                               style="width: 1.5em; height: 1.5em;">
+                                    </td>
+                                    <td class="text-end">
+                                        <small class="text-muted">New</small>
+                                    </td>
+                                </tr>
+
+                                <!-- Existing Items -->
+                                {% for item in items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ item.name }}</strong>
+                                        {% if item.description %}
+                                            <br><small class="text-muted">{{ item.description }}</small>
+                                        {% endif %}
+                                        <input type="hidden" name="item_ids" value="{{ item.id }}">
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="number"
+                                               name="quantity_{{ item.id }}"
+                                               value="{{ item.quantity }}"
+                                               min="0"
+                                               class="form-control form-control-sm text-center"
+                                               style="width: 80px; display: inline-block;"
+                                               required>
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="checkbox"
+                                               name="shared_{{ item.id }}"
+                                               class="form-check-input"
+                                               style="width: 1.5em; height: 1.5em;"
+                                               {% if item.is_shared_gear %}checked{% endif %}>
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button"
+                                                class="btn btn-outline-danger btn-sm delete-item"
+                                                data-item-id="{{ item.id }}"
+                                                data-item-name="{{ item.name }}"
+                                                title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+
+                                {% if not items %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        No inventory items yet. Use the blank row above to add your first item!
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Changes save automatically when you navigate away
+                        </small>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i>Save All Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Hidden delete form -->
+        <form method="POST" id="delete-form" style="display: none;">
+            <input type="hidden" name="item_id" id="delete-item-id">
+        </form>
+
+        <script>
+            // Auto-save on navigation
+            let formChanged = false;
+            const form = document.getElementById('inventory-form');
+
+            // Track changes
+            form.addEventListener('input', function() {
+                formChanged = true;
+            });
+
+            // Auto-save before unload
+            window.addEventListener('beforeunload', function(e) {
+                if (formChanged) {
+                    // Submit form via fetch to avoid navigation blocking
+                    const formData = new FormData(form);
+                    navigator.sendBeacon(form.action, formData);
+                }
+            });
+
+            // Handle delete buttons
+            document.querySelectorAll('.delete-item').forEach(button => {
+                button.addEventListener('click', function() {
+                    const itemId = this.dataset.itemId;
+                    const itemName = this.dataset.itemName;
+
+                    if (confirm(`Are you sure you want to delete "${itemName}"?`)) {
+                        const deleteForm = document.getElementById('delete-form');
+                        deleteForm.action = `/inventory/${itemId}/delete`;
+                        document.getElementById('delete-item-id').value = itemId;
+                        deleteForm.submit();
+                    }
+                });
+            });
+
+            // Mark form as unchanged after successful submit
+            form.addEventListener('submit', function() {
+                formChanged = false;
+            });
+        </script>
+    </div>
+</div>
+{% endblock %}
