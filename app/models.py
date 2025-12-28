@@ -416,6 +416,16 @@ class User(UserMixin, db.Model):
         return self.has_role_or_higher(UserRole.SITE_ADMIN)
 
     @property
+    def is_event_manager_or_higher(self):
+        """
+        Check if user is event manager or higher privilege level.
+
+        Returns:
+            bool: True if user is event manager, site admin, or global admin, False otherwise
+        """
+        return self.has_role_or_higher(UserRole.EVENT_MANAGER)
+
+    @property
     def role_display_name(self):
         """
         Get user-friendly display name for role.

@@ -71,6 +71,12 @@ function Navbar() {
                     Inventory
                   </Link>
                 </li>
+                <li>
+                  <Link className="dropdown-item" to="/my-camps">
+                    <i className="bi bi-flag me-2"></i>
+                    My Camps
+                  </Link>
+                </li>
                 <li><hr className="dropdown-divider" /></li>
                 <li>
                   <button className="dropdown-item" onClick={handleLogout}>

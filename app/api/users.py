@@ -65,7 +65,8 @@ def serialize_camp_membership(membership):
         },
         'status': membership.status,
         'role': membership.role,
-        'joined_at': membership.joined_at.isoformat() if membership.joined_at else None
+        'requested_at': membership.requested_at.isoformat() if membership.requested_at else None,
+        'approved_at': membership.approved_at.isoformat() if membership.approved_at else None
     }
 
 

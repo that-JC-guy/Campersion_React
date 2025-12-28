@@ -5,7 +5,7 @@
  * and redirects to dashboard or login based on success/error.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../contexts/AuthContext';
@@ -14,8 +14,15 @@ function OAuthCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { checkAuth } = useAuth();
+  const callbackHandled = useRef(false);
 
   useEffect(() => {
+    // Prevent double execution in React StrictMode
+    if (callbackHandled.current) {
+      return;
+    }
+    callbackHandled.current = true;
+
     const handleCallback = async () => {
       const success = searchParams.get('success');
       const error = searchParams.get('error');

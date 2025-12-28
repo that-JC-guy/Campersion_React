@@ -5,7 +5,7 @@ This module defines custom exception classes and error handlers
 that return JSON responses for API endpoints.
 """
 
-from flask import jsonify
+from flask import jsonify, make_response
 from flask_jwt_extended.exceptions import NoAuthorizationError
 from werkzeug.exceptions import HTTPException
 from app.api import api_bp
@@ -193,7 +193,9 @@ def success_response(data=None, message=None, status_code=200):
     if message:
         response['message'] = message
 
-    return jsonify(response), status_code
+    resp = make_response(jsonify(response))
+    resp.status_code = status_code
+    return resp
 
 
 def error_response(error, status_code=400):
@@ -207,7 +209,9 @@ def error_response(error, status_code=400):
     Returns:
         Flask response with JSON content
     """
-    return jsonify({
+    resp = make_response(jsonify({
         'success': False,
         'error': error
-    }), status_code
+    }))
+    resp.status_code = status_code
+    return resp

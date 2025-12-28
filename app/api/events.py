@@ -437,8 +437,8 @@ def approve_camp(current_user, event_id, camp_id):
     event = Event.query.get_or_404(event_id)
     camp = Camp.query.get_or_404(camp_id)
 
-    # Check permission: must be event creator or site admin
-    if event.creator_id != current_user.id and not current_user.is_site_admin_or_higher:
+    # Check permission: must be event creator, event manager, or site admin
+    if event.creator_id != current_user.id and not current_user.is_event_manager_or_higher:
         return error_response('You can only manage camp requests for your own events'), 403
 
     # Get the association
@@ -483,8 +483,8 @@ def reject_camp(current_user, event_id, camp_id):
     event = Event.query.get_or_404(event_id)
     camp = Camp.query.get_or_404(camp_id)
 
-    # Check permission: must be event creator or site admin
-    if event.creator_id != current_user.id and not current_user.is_site_admin_or_higher:
+    # Check permission: must be event creator, event manager, or site admin
+    if event.creator_id != current_user.id and not current_user.is_event_manager_or_higher:
         return error_response('You can only manage camp requests for your own events'), 403
 
     # Get the association

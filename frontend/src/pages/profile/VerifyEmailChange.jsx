@@ -5,7 +5,7 @@
  * Auto-verifies on component mount.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useVerifyEmailChange } from '../../hooks/useProfile';
 
@@ -13,8 +13,15 @@ function VerifyEmailChange() {
   const { token } = useParams();
   const verifyMutation = useVerifyEmailChange();
   const [verifying, setVerifying] = useState(true);
+  const verificationAttempted = useRef(false);
 
   useEffect(() => {
+    // Prevent double execution in React StrictMode
+    if (verificationAttempted.current) {
+      return;
+    }
+    verificationAttempted.current = true;
+
     if (token) {
       verifyMutation.mutate(token, {
         onSettled: () => {

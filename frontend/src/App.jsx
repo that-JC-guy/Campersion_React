@@ -37,6 +37,7 @@ import EventForm from './pages/events/EventForm';
 import CampsList from './pages/camps/CampsList';
 import CampDetail from './pages/camps/CampDetail';
 import CampForm from './pages/camps/CampForm';
+import MyCamps from './pages/camps/MyCamps';
 
 // Placeholder for dashboard
 function Dashboard() {
@@ -90,6 +91,7 @@ function App() {
           <Route path="profile/edit" element={<EditProfile />} />
           <Route path="profile/change-email" element={<ChangeEmail />} />
           <Route path="inventory" element={<InventoryList />} />
+          <Route path="my-camps" element={<MyCamps />} />
           <Route path="events" element={<EventsList />} />
           <Route path="events/create" element={<EventForm />} />
           <Route path="events/:eventId" element={<EventDetail />} />

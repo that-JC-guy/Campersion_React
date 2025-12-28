@@ -70,7 +70,7 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)  # Access token expires in 1 hour
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=7)  # Refresh token expires in 7 days
     JWT_COOKIE_SECURE = False  # Set to True in production (HTTPS only)
-    JWT_COOKIE_CSRF_PROTECT = True  # CSRF protection for cookies
+    JWT_COOKIE_CSRF_PROTECT = False  # Disabled for SPA (using CORS instead)
     JWT_COOKIE_SAMESITE = 'Lax'  # CSRF protection
     JWT_CSRF_IN_COOKIES = False  # Don't use separate CSRF cookie
 

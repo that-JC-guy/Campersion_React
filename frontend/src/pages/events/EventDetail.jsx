@@ -88,7 +88,7 @@ function EventDetail() {
   if (!event) return null;
 
   const isCreator = user && event.creator_id === user.id;
-  const canManageCamps = isCreator || (user && ['site_admin', 'global_admin'].includes(user.role));
+  const canManageCamps = isCreator || (user && ['event_manager', 'site_admin', 'global_admin'].includes(user.role));
 
   return (
     <div className="container mt-4">

@@ -35,6 +35,7 @@ export const useCreateInventoryItem = () => {
     mutationFn: createInventoryItem,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['camps'] });
       toast.success(data.message || 'Item added successfully!');
     },
     onError: (error) => {
@@ -54,6 +55,7 @@ export const useUpdateInventoryItem = () => {
     mutationFn: ({ itemId, data }) => updateInventoryItem(itemId, data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['camps'] });
       toast.success(data.message || 'Item updated successfully!');
     },
     onError: (error) => {
@@ -73,6 +75,7 @@ export const useDeleteInventoryItem = () => {
     mutationFn: deleteInventoryItem,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['camps'] });
       toast.success(data.message || 'Item deleted successfully!');
     },
     onError: (error) => {
@@ -92,6 +95,7 @@ export const useBulkUpdateInventory = () => {
     mutationFn: bulkUpdateInventory,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['camps'] });
       toast.success(data.message || 'Inventory updated successfully!');
     },
     onError: (error) => {
@@ -111,6 +115,7 @@ export const useQuickAddInventoryItem = () => {
     mutationFn: quickAddInventoryItem,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['camps'] });
       toast.success(data.message || 'Item added successfully!');
     },
     onError: (error) => {

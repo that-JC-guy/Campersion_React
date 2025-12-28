@@ -4,7 +4,7 @@
  * Verify email address using token from email link.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { verifyEmail } from '../../api/services/auth';
 
@@ -12,8 +12,15 @@ function VerifyEmail() {
   const { token } = useParams();
   const [status, setStatus] = useState('verifying'); // verifying, success, error
   const [message, setMessage] = useState('');
+  const verificationAttempted = useRef(false);
 
   useEffect(() => {
+    // Prevent double execution in React StrictMode
+    if (verificationAttempted.current) {
+      return;
+    }
+    verificationAttempted.current = true;
+
     const verify = async () => {
       try {
         const response = await verifyEmail(token);
