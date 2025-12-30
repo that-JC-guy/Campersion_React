@@ -37,17 +37,17 @@ import EventForm from './pages/events/EventForm';
 import CampsList from './pages/camps/CampsList';
 import CampDetail from './pages/camps/CampDetail';
 import CampForm from './pages/camps/CampForm';
+import CampOrganization from './pages/camps/CampOrganization';
 import MyCamps from './pages/camps/MyCamps';
 
-// Placeholder for dashboard
-function Dashboard() {
-  return (
-    <div className="container mt-4">
-      <h2>Dashboard</h2>
-      <p>Welcome! Authentication is working. Check out your inventory page to see the full CRUD functionality.</p>
-    </div>
-  );
-}
+// Admin pages
+import AdminDashboard from './pages/admin/AdminDashboard';
+import UserManagement from './pages/admin/UserManagement';
+import EventManagement from './pages/admin/EventManagement';
+import CampEventAssociations from './pages/admin/CampEventAssociations';
+
+// Dashboard
+import Dashboard from './pages/Dashboard';
 
 function App() {
   return (
@@ -100,6 +100,11 @@ function App() {
           <Route path="camps/create" element={<CampForm />} />
           <Route path="camps/:campId" element={<CampDetail />} />
           <Route path="camps/:campId/edit" element={<CampForm />} />
+          <Route path="camps/:campId/organization" element={<CampOrganization />} />
+          <Route path="admin" element={<AdminDashboard />} />
+          <Route path="admin/users" element={<UserManagement />} />
+          <Route path="admin/events" element={<EventManagement />} />
+          <Route path="admin/associations" element={<CampEventAssociations />} />
         </Route>
 
         {/* Catch all - redirect to dashboard */}
@@ -110,3 +115,4 @@ function App() {
 }
 
 export default App;
+

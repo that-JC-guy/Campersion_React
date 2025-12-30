@@ -50,9 +50,17 @@ function Login() {
             <div className="col-md-6 col-lg-5">
               <div className="card shadow-lg border-0 rounded-lg">
                 <div className="card-body p-5">
-                  <div className="text-center mb-4">
-                    <h3 className="fw-bold">Sign In</h3>
-                    <p className="text-muted">Enter your email and password</p>
+                  <div className="d-flex align-items-center justify-content-center mb-4">
+                    <img
+                      src="/Logo-Light.png"
+                      alt="Campersion Logo"
+                      style={{ height: '60px', width: 'auto' }}
+                      className="me-3"
+                    />
+                    <div>
+                      <h3 className="fw-bold mb-1">Sign In</h3>
+                      <p className="text-muted mb-0">Enter your email and password</p>
+                    </div>
                   </div>
 
                   <form onSubmit={handleSubmit(onSubmit)}>
@@ -144,9 +152,17 @@ function Login() {
           <div className="col-md-6 col-lg-5">
             <div className="card shadow-lg border-0 rounded-lg">
               <div className="card-body p-5">
-                <div className="text-center mb-4">
-                  <h2 className="fw-bold">Welcome to Campersion</h2>
-                  <p className="text-muted">Sign in to continue</p>
+                <div className="d-flex align-items-center justify-content-center mb-4">
+                  <img
+                    src="/Logo-Light.png"
+                    alt="Campersion Logo"
+                    style={{ height: '60px', width: 'auto' }}
+                    className="me-3"
+                  />
+                  <div>
+                    <h2 className="fw-bold mb-1">Welcome to Campersion</h2>
+                    <p className="text-muted mb-0">Sign in to continue</p>
+                  </div>
                 </div>
 
                 {/* OAuth Buttons */}

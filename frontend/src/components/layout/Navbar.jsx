@@ -2,6 +2,7 @@
  * Navbar Component.
  *
  * Main navigation bar with user menu and links.
+ * Includes Dashboard link in user dropdown.
  */
 
 import { Link, useNavigate } from 'react-router-dom';
@@ -20,7 +21,12 @@ function Navbar() {
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
       <div className="container-fluid">
         <Link className="navbar-brand d-flex align-items-center" to="/dashboard">
-          <i className="bi bi-shield-lock me-2"></i>
+          <img
+            src="/Logo-Dark.png"
+            alt="Campersion"
+            style={{ height: '40px', width: 'auto' }}
+            className="me-2"
+          />
           <span className="fw-bold">Campersion</span>
         </Link>
 
@@ -44,6 +50,14 @@ function Navbar() {
             <li className="nav-item">
               <Link className="nav-link" to="/camps">Camps</Link>
             </li>
+            {(user?.role === 'site admin' || user?.role === 'global admin') && (
+              <li className="nav-item">
+                <Link className="nav-link" to="/admin">
+                  <i className="bi bi-shield-lock me-1"></i>
+                  Admin
+                </Link>
+              </li>
+            )}
 
             {/* User Dropdown */}
             <li className="nav-item dropdown">
@@ -59,6 +73,12 @@ function Navbar() {
                 {user?.preferred_name || user?.first_name || user?.name || 'User'}
               </a>
               <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                <li>
+                  <Link className="dropdown-item" to="/dashboard">
+                    <i className="bi bi-speedometer2 me-2"></i>
+                    Dashboard
+                  </Link>
+                </li>
                 <li>
                   <Link className="dropdown-item" to="/profile">
                     <i className="bi bi-person me-2"></i>

@@ -45,6 +45,8 @@ def jwt_required_with_user(f):
         current_user = User.query.get(int(user_id))
         if not current_user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
+        if not current_user.is_active:
+            return jsonify({'success': False, 'error': 'Account is suspended'}), 403
         return f(current_user, *args, **kwargs)
     return decorated_function
 
@@ -73,6 +75,9 @@ def jwt_required_role(required_role):
 
             if not current_user:
                 return jsonify({'success': False, 'error': 'User not found'}), 404
+
+            if not current_user.is_active:
+                return jsonify({'success': False, 'error': 'Account is suspended'}), 403
 
             if not has_role_or_higher(current_user, required_role):
                 return jsonify({

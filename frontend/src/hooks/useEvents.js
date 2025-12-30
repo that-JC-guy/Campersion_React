@@ -21,11 +21,12 @@ import {
 
 /**
  * Hook to fetch all events.
+ * @param {string} status - Optional status filter
  */
-export const useEvents = () => {
+export const useEvents = (status) => {
   return useQuery({
-    queryKey: ['events'],
-    queryFn: getEvents,
+    queryKey: ['events', status],
+    queryFn: () => getEvents(status),
   });
 };
 
@@ -186,5 +187,7 @@ export const usePendingCampRequests = () => {
   return useQuery({
     queryKey: ['pending-camp-requests'],
     queryFn: getPendingCampRequests,
+    refetchOnWindowFocus: true,
+    staleTime: 30 * 1000, // 30 seconds - check for new requests more frequently
   });
 };

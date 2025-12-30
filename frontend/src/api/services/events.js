@@ -10,10 +10,15 @@ import apiClient from '../client';
 /**
  * Get all events (role-filtered).
  *
+ * @param {string} status - Optional status filter
  * @returns {Promise} API response with events list
  */
-export const getEvents = async () => {
-  const response = await apiClient.get('/events');
+export const getEvents = async (status) => {
+  const params = {};
+  if (status) {
+    params.status = status;
+  }
+  const response = await apiClient.get('/events', { params });
   return response.data.data;
 };
 

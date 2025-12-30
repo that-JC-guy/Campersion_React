@@ -169,6 +169,9 @@ class User(UserMixin, db.Model):
     email_verification_token = db.Column(db.String(100), unique=True, nullable=True)
     email_verification_sent_at = db.Column(db.DateTime, nullable=True)
 
+    # Account status for soft delete/suspension
+    is_active = db.Column(db.Boolean, default=True, nullable=False, server_default='true')
+
     # Password reset functionality
     password_reset_token = db.Column(db.String(100), unique=True, nullable=True)
     password_reset_sent_at = db.Column(db.DateTime, nullable=True)
@@ -426,6 +429,16 @@ class User(UserMixin, db.Model):
         return self.has_role_or_higher(UserRole.EVENT_MANAGER)
 
     @property
+    def is_suspended(self):
+        """
+        Check if user account is suspended.
+
+        Returns:
+            bool: True if user is suspended (inactive), False otherwise
+        """
+        return not self.is_active
+
+    @property
     def role_display_name(self):
         """
         Get user-friendly display name for role.
@@ -645,8 +658,17 @@ class Camp(db.Model):
     # Foreign key to creator
     creator_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
+    # Optional leadership roles
+    camp_lead_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    backup_camp_lead_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    enable_camp_lead = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
+    enable_backup_camp_lead = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
+
     # Relationship to User
-    creator = db.relationship('User', backref='created_camps', lazy=True)
+    creator = db.relationship('User', backref='created_camps', lazy=True, foreign_keys=[creator_id])
+    camp_lead = db.relationship('User', foreign_keys=[camp_lead_id])
+    backup_camp_lead = db.relationship('User', foreign_keys=[backup_camp_lead_id])
+    clusters = db.relationship('Cluster', back_populates='camp', cascade='all, delete-orphan')
 
     # Timestamps
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -861,6 +883,208 @@ class CampMember(db.Model):
     def is_member(self):
         """Check if user is a regular member."""
         return self.role == CampMemberRole.MEMBER.value and self.is_approved
+
+
+class Cluster(db.Model):
+    """
+    Cluster: A group of related teams within a camp.
+
+    Clusters organize teams hierarchically within a camp's volunteer structure.
+    Each cluster has an optional cluster lead responsible for coordinating teams.
+    """
+
+    __tablename__ = 'clusters'
+
+    # Primary key
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Foreign key to camp
+    camp_id = db.Column(db.Integer, db.ForeignKey('camps.id', ondelete='CASCADE'), nullable=False)
+
+    # Cluster information
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+
+    # Optional cluster lead
+    cluster_lead_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    backup_cluster_lead_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+
+    # Enable flags for leadership roles
+    enable_cluster_lead = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
+    enable_backup_cluster_lead = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
+
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    camp = db.relationship('Camp', back_populates='clusters')
+    cluster_lead = db.relationship('User', foreign_keys=[cluster_lead_id])
+    backup_cluster_lead = db.relationship('User', foreign_keys=[backup_cluster_lead_id])
+    teams = db.relationship('Team', back_populates='cluster', cascade='all, delete-orphan')
+
+    # Ensure unique cluster names within a camp
+    __table_args__ = (
+        db.UniqueConstraint('camp_id', 'name', name='uq_cluster_camp_name'),
+    )
+
+    def __repr__(self):
+        """String representation of Cluster object."""
+        return f'<Cluster {self.name} (camp_id={self.camp_id})>'
+
+    def serialize(self, include_teams=False):
+        """Serialize cluster to dictionary."""
+        data = {
+            'id': self.id,
+            'camp_id': self.camp_id,
+            'name': self.name,
+            'description': self.description,
+            'enable_cluster_lead': self.enable_cluster_lead,
+            'enable_backup_cluster_lead': self.enable_backup_cluster_lead,
+            'cluster_lead': {
+                'id': self.cluster_lead.id,
+                'name': self.cluster_lead.name,
+                'email': self.cluster_lead.email,
+                'preferred_name': self.cluster_lead.preferred_name
+            } if self.cluster_lead and self.enable_cluster_lead else None,
+            'backup_cluster_lead': {
+                'id': self.backup_cluster_lead.id,
+                'name': self.backup_cluster_lead.name,
+                'email': self.backup_cluster_lead.email,
+                'preferred_name': self.backup_cluster_lead.preferred_name
+            } if self.backup_cluster_lead and self.enable_backup_cluster_lead else None,
+            'team_count': len(self.teams),
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+        if include_teams:
+            data['teams'] = [team.serialize() for team in self.teams]
+        return data
+
+
+class Team(db.Model):
+    """
+    Team: A group of people responsible for specific tasks.
+
+    Teams are organized within clusters and have an optional team lead.
+    Team members are tracked through the TeamMember association table.
+    """
+
+    __tablename__ = 'teams'
+
+    # Primary key
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Foreign key to cluster
+    cluster_id = db.Column(db.Integer, db.ForeignKey('clusters.id', ondelete='CASCADE'), nullable=False)
+
+    # Team information
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+
+    # Optional team lead
+    team_lead_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+    backup_team_lead_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'))
+
+    # Enable flags for leadership roles
+    enable_team_lead = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
+    enable_backup_team_lead = db.Column(db.Boolean, default=False, nullable=False, server_default='false')
+
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    cluster = db.relationship('Cluster', back_populates='teams')
+    team_lead = db.relationship('User', foreign_keys=[team_lead_id])
+    backup_team_lead = db.relationship('User', foreign_keys=[backup_team_lead_id])
+    team_members = db.relationship('TeamMember', back_populates='team', cascade='all, delete-orphan')
+
+    # Ensure unique team names within a cluster
+    __table_args__ = (
+        db.UniqueConstraint('cluster_id', 'name', name='uq_team_cluster_name'),
+    )
+
+    def __repr__(self):
+        """String representation of Team object."""
+        return f'<Team {self.name} (cluster_id={self.cluster_id})>'
+
+    def serialize(self, include_members=False):
+        """Serialize team to dictionary."""
+        data = {
+            'id': self.id,
+            'cluster_id': self.cluster_id,
+            'name': self.name,
+            'description': self.description,
+            'enable_team_lead': self.enable_team_lead,
+            'enable_backup_team_lead': self.enable_backup_team_lead,
+            'team_lead': {
+                'id': self.team_lead.id,
+                'name': self.team_lead.name,
+                'email': self.team_lead.email,
+                'preferred_name': self.team_lead.preferred_name
+            } if self.team_lead and self.enable_team_lead else None,
+            'backup_team_lead': {
+                'id': self.backup_team_lead.id,
+                'name': self.backup_team_lead.name,
+                'email': self.backup_team_lead.email,
+                'preferred_name': self.backup_team_lead.preferred_name
+            } if self.backup_team_lead and self.enable_backup_team_lead else None,
+            'member_count': len(self.team_members),
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+        if include_members:
+            data['members'] = [tm.serialize() for tm in self.team_members]
+        return data
+
+
+class TeamMember(db.Model):
+    """
+    TeamMember: Association between users and teams.
+
+    Links camp members to specific teams within the camp's organizational structure.
+    Users can be members of multiple teams within the same camp.
+    """
+
+    __tablename__ = 'team_members'
+
+    # Primary key
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Foreign keys
+    team_id = db.Column(db.Integer, db.ForeignKey('teams.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+
+    # Timestamp
+    joined_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    team = db.relationship('Team', back_populates='team_members')
+    user = db.relationship('User')
+
+    # Ensure unique team memberships
+    __table_args__ = (
+        db.UniqueConstraint('team_id', 'user_id', name='uq_team_member'),
+    )
+
+    def __repr__(self):
+        """String representation of TeamMember object."""
+        return f'<TeamMember user_id={self.user_id} team_id={self.team_id}>'
+
+    def serialize(self):
+        """Serialize team member to dictionary."""
+        return {
+            'id': self.id,
+            'team_id': self.team_id,
+            'user': {
+                'id': self.user.id,
+                'name': self.user.name,
+                'email': self.user.email,
+                'preferred_name': self.user.preferred_name
+            },
+            'joined_at': self.joined_at.isoformat()
+        }
 
 
 class InventoryItem(db.Model):

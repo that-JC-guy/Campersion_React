@@ -86,6 +86,9 @@ def list_events():
     - Event managers see all approved events + their own events (any status)
     - All other users (including unauthenticated) see only approved events
 
+    Query parameters:
+        status: Optional status filter (pending, approved, rejected, cancelled)
+
     Returns:
         200: List of events filtered by permissions
     """
@@ -98,21 +101,32 @@ def list_events():
     except:
         current_user = None
 
+    # Get optional status filter
+    status_filter = request.args.get('status')
+
     if current_user and current_user.is_site_admin_or_higher:
         # Site admins see all events
-        events = Event.query.order_by(Event.created_at.desc()).all()
+        query = Event.query
+        if status_filter:
+            query = query.filter_by(status=status_filter)
+        events = query.order_by(Event.created_at.desc()).all()
     elif current_user and current_user.has_role_or_higher(UserRole.EVENT_MANAGER):
         # Event managers see their own events (any status) OR all approved events
-        events = Event.query.filter(
+        query = Event.query.filter(
             or_(
                 Event.creator_id == current_user.id,
                 Event.status == EventStatus.APPROVED.value
             )
-        ).order_by(Event.created_at.desc()).all()
+        )
+        if status_filter:
+            query = query.filter_by(status=status_filter)
+        events = query.order_by(Event.created_at.desc()).all()
     else:
         # All other users (including unauthenticated) see only approved events
-        events = Event.query.filter_by(status=EventStatus.APPROVED.value)\
-                           .order_by(Event.start_date.asc()).all()
+        query = Event.query.filter_by(status=EventStatus.APPROVED.value)
+        if status_filter:
+            query = query.filter_by(status=status_filter)
+        events = query.order_by(Event.start_date.asc()).all()
 
     return success_response(data={
         'events': [serialize_event(event) for event in events]

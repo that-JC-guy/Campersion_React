@@ -71,7 +71,8 @@ def link_or_create_user(email, name, picture, provider, provider_user_id):
             first_name=first_name,
             last_name=last_name,
             picture=picture,
-            email_verified=True
+            email_verified=True,
+            is_active=True  # Ensure OAuth users are active
         )
         db.session.add(user)
         # Flush to get user.id without committing

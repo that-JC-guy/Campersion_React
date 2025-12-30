@@ -178,5 +178,7 @@ export const usePendingMemberRequests = () => {
   return useQuery({
     queryKey: ['pending-member-requests'],
     queryFn: getPendingMemberRequests,
+    refetchOnWindowFocus: true,
+    staleTime: 30 * 1000, // 30 seconds - check for new requests more frequently
   });
 };

@@ -29,6 +29,7 @@ def serialize_user_profile(user):
         'picture': user.picture,
         'role': user.role,
         'email_verified': user.email_verified,
+        'is_active': user.is_active,
         'home_phone': user.home_phone,
         'mobile_phone': user.mobile_phone,
         'work_phone': user.work_phone,

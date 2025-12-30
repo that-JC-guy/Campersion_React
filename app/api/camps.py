@@ -19,6 +19,34 @@ from datetime import datetime
 from collections import defaultdict
 
 
+def can_user_manage_camp(user, camp_id):
+    """Check if user can manage a specific camp (is camp manager)."""
+    # Site admins can manage any camp
+    if user.is_site_admin_or_higher:
+        return True
+
+    # Check if user is a camp manager
+    membership = CampMember.query.filter_by(
+        user_id=user.id,
+        camp_id=camp_id,
+        status=AssociationStatus.APPROVED.value,
+        role='manager'
+    ).first()
+
+    return membership is not None
+
+
+def is_user_camp_member(user, camp_id):
+    """Check if user is an approved member of the camp."""
+    membership = CampMember.query.filter_by(
+        user_id=user.id,
+        camp_id=camp_id,
+        status=AssociationStatus.APPROVED.value
+    ).first()
+
+    return membership is not None
+
+
 def serialize_camp(camp, include_members=False, include_inventory=False):
     """Serialize camp to dictionary."""
     data = {
@@ -35,6 +63,21 @@ def serialize_camp(camp, include_members=False, include_inventory=False):
         'custom_amenities': camp.custom_amenities,
         'member_approval_mode': camp.member_approval_mode,
         'creator_id': camp.creator_id,
+        'enable_camp_lead': camp.enable_camp_lead,
+        'enable_backup_camp_lead': camp.enable_backup_camp_lead,
+        'camp_lead': {
+            'id': camp.camp_lead.id,
+            'name': camp.camp_lead.name,
+            'email': camp.camp_lead.email,
+            'preferred_name': camp.camp_lead.preferred_name
+        } if camp.camp_lead and camp.enable_camp_lead else None,
+        'backup_camp_lead': {
+            'id': camp.backup_camp_lead.id,
+            'name': camp.backup_camp_lead.name,
+            'email': camp.backup_camp_lead.email,
+            'preferred_name': camp.backup_camp_lead.preferred_name
+        } if camp.backup_camp_lead and camp.enable_backup_camp_lead else None,
+        'cluster_count': len(camp.clusters) if hasattr(camp, 'clusters') else 0,
         'created_at': camp.created_at.isoformat() if camp.created_at else None
     }
 
@@ -309,14 +352,32 @@ def update_camp(current_user, camp_id):
     """
     camp = Camp.query.get_or_404(camp_id)
 
-    # Check permissions: must be creator or site admin
-    if camp.creator_id != current_user.id and not current_user.is_site_admin_or_higher:
-        return error_response('You can only edit your own camps'), 403
-
     data = request.get_json()
 
     if not data:
         return error_response('No data provided'), 400
+
+    # Determine if this is a self-assignment operation (only changing lead fields for current user)
+    is_creator_or_admin = (camp.creator_id == current_user.id or current_user.is_site_admin_or_higher)
+    is_manager = can_user_manage_camp(current_user, camp_id)
+    is_self_lead_update = (
+        set(data.keys()).issubset({'camp_lead_id', 'backup_camp_lead_id'}) and
+        (data.get('camp_lead_id') == current_user.id or data.get('camp_lead_id') is None) and
+        (data.get('backup_camp_lead_id') == current_user.id or data.get('backup_camp_lead_id') is None or 'backup_camp_lead_id' not in data) and
+        ('camp_lead_id' not in data or data.get('camp_lead_id') is None or camp.camp_lead_id is None or camp.camp_lead_id == current_user.id) and
+        ('backup_camp_lead_id' not in data or data.get('backup_camp_lead_id') is None or camp.backup_camp_lead_id is None or camp.backup_camp_lead_id == current_user.id)
+    )
+
+    # Check if user is an approved camp member
+    is_camp_member = is_user_camp_member(current_user, camp_id) if not is_manager else True
+
+    # Only creator/admin/manager can update non-lead fields
+    if not is_creator_or_admin and not is_manager and not is_self_lead_update:
+        return error_response('You can only edit your own camps'), 403
+
+    # Members can only do self-assignment if they're approved camp members
+    if not is_creator_or_admin and not is_manager and not is_camp_member:
+        return error_response('You must be an approved camp member'), 403
 
     # Update fields
     if 'name' in data:
@@ -351,6 +412,53 @@ def update_camp(current_user, camp_id):
 
     if 'member_approval_mode' in data:
         camp.member_approval_mode = data['member_approval_mode']
+
+    # Allow updating leadership settings
+    if 'enable_camp_lead' in data:
+        camp.enable_camp_lead = bool(data['enable_camp_lead'])
+
+    if 'enable_backup_camp_lead' in data:
+        camp.enable_backup_camp_lead = bool(data['enable_backup_camp_lead'])
+
+    # If disabling, clear the assigned leads
+    if not camp.enable_camp_lead:
+        camp.camp_lead_id = None
+
+    if not camp.enable_backup_camp_lead:
+        camp.backup_camp_lead_id = None
+
+    # Allow assigning camp leads (must be camp members)
+    if 'camp_lead_id' in data and camp.enable_camp_lead:
+        camp_lead_id = data['camp_lead_id']
+
+        if camp_lead_id:
+            # Verify is camp member
+            member = CampMember.query.filter_by(
+                camp_id=camp.id,
+                user_id=camp_lead_id,
+                status=AssociationStatus.APPROVED.value
+            ).first()
+
+            if not member:
+                return error_response('Camp lead must be an approved camp member'), 400
+
+        camp.camp_lead_id = camp_lead_id
+
+    if 'backup_camp_lead_id' in data and camp.enable_backup_camp_lead:
+        backup_camp_lead_id = data['backup_camp_lead_id']
+
+        if backup_camp_lead_id:
+            # Verify is camp member
+            member = CampMember.query.filter_by(
+                camp_id=camp.id,
+                user_id=backup_camp_lead_id,
+                status=AssociationStatus.APPROVED.value
+            ).first()
+
+            if not member:
+                return error_response('Backup camp lead must be an approved camp member'), 400
+
+        camp.backup_camp_lead_id = backup_camp_lead_id
 
     db.session.commit()
 

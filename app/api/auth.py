@@ -31,6 +31,7 @@ def serialize_user(user):
         'last_name': user.last_name,
         'preferred_name': user.preferred_name,
         'role': user.role,
+        'is_active': user.is_active,
         'email_verified': user.email_verified,
         'picture': user.picture,
         'has_password_auth': user.has_password_auth,
@@ -81,7 +82,8 @@ def register():
     user = User(
         email=email,
         name=name,
-        email_verified=False
+        email_verified=False,
+        is_active=True  # New users are active by default
     )
     user.set_password(password)
 

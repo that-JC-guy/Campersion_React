@@ -12,4 +12,4 @@ api_bp = Blueprint('api', __name__)
 
 # Import routes after blueprint creation to avoid circular imports
 # Routes will be registered when modules are imported
-from app.api import auth, users, events, camps, inventory, errors
+from app.api import auth, users, events, camps, inventory, admin, clusters, teams, errors
