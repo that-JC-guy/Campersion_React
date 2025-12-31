@@ -74,3 +74,4 @@ dmypy.json
 
 # Docker volumes data (if not using named volumes)
 postgres_data/
+Campersion/
