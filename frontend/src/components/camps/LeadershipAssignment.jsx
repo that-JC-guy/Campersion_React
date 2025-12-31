@@ -4,7 +4,8 @@
  * Reusable component for assigning leaders to camps, clusters, or teams.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { formatNameWithPronouns } from '../../utils/nameFormatter';
 
 function LeadershipAssignment({
   role,
@@ -12,9 +13,15 @@ function LeadershipAssignment({
   availableMembers,
   onAssign,
   onClear,
-  disabled = false
+  disabled = false,
+  excludedUserId = null
 }) {
   const [selectedUserId, setSelectedUserId] = useState(currentLeadId || '');
+
+  // Sync internal state when currentLeadId prop changes
+  useEffect(() => {
+    setSelectedUserId(currentLeadId || '');
+  }, [currentLeadId]);
 
   const getRoleLabel = () => {
     switch (role) {
@@ -56,7 +63,7 @@ function LeadershipAssignment({
         <div className="alert alert-info py-2 px-3 mb-2">
           <i className="bi bi-person-badge me-2"></i>
           <strong>Current {getRoleLabel()}:</strong>{' '}
-          {currentLead.user?.preferred_name || currentLead.user?.name || currentLead.preferred_name || currentLead.name}
+          {formatNameWithPronouns(currentLead.user || currentLead)}
           {' '}
           <span className="badge bg-primary">Leader</span>
         </div>
@@ -72,10 +79,13 @@ function LeadershipAssignment({
         {availableMembers.map((member) => {
           const userId = member.user?.id || member.id;
           const userName = member.user?.preferred_name || member.user?.name || member.preferred_name || member.name;
+          const user = member.user || member;
+          const pronouns = user.show_pronouns && user.pronouns ? ` (${user.pronouns})` : '';
+          const isExcluded = excludedUserId && Number(userId) === Number(excludedUserId);
 
           return (
-            <option key={userId} value={userId}>
-              {userName}
+            <option key={userId} value={userId} disabled={isExcluded}>
+              {userName}{pronouns}{isExcluded ? ' - Already assigned to other role' : ''}
             </option>
           );
         })}

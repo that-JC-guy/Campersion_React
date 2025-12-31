@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAllAssociations, useRevokeAssociation, useCancelAssociationRejection } from '../../hooks/useAdmin';
 import StatusBadge from '../../components/admin/StatusBadge';
 import ConfirmActionModal from '../../components/admin/ConfirmActionModal';
@@ -76,6 +76,16 @@ function CampEventAssociations() {
 
   return (
     <div className="container mt-4">
+      {/* Breadcrumbs */}
+      <nav aria-label="breadcrumb">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item">
+            <Link to="/admin">Admin</Link>
+          </li>
+          <li className="breadcrumb-item active">Camp-Event Associations</li>
+        </ol>
+      </nav>
+
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>
           <i className="bi bi-link-45deg me-2"></i>Camp-Event Associations

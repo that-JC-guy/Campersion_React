@@ -6,11 +6,13 @@
  */
 
 import './OrgChart.css';
+import { formatNameWithPronouns } from '../../utils/nameFormatter';
 
 function OrgChart({ camp, clusters = [] }) {
-  // Helper function to get display name
+  // Helper function to get display name with pronouns
   const getDisplayName = (user) => {
-    return user?.preferred_name || user?.name || 'Unassigned';
+    if (!user) return 'Unassigned';
+    return formatNameWithPronouns(user);
   };
 
   return (

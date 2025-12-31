@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import { formatMemberNameWithPronouns, formatNameWithPronouns } from '../../utils/nameFormatter';
 
 function TeamCard({
   team,
@@ -47,7 +48,7 @@ function TeamCard({
                     <>
                       <i className="bi bi-person-badge me-1"></i>
                       <strong>Team Lead:</strong>{' '}
-                      {team.team_lead.preferred_name || team.team_lead.name}
+                      {formatNameWithPronouns(team.team_lead)}
                     </>
                   )}
                   {team.backup_team_lead && (
@@ -55,7 +56,7 @@ function TeamCard({
                       {team.team_lead && <span className="mx-2">|</span>}
                       <i className="bi bi-person-badge me-1"></i>
                       <strong>Backup:</strong>{' '}
-                      {team.backup_team_lead.preferred_name || team.backup_team_lead.name}
+                      {formatNameWithPronouns(team.backup_team_lead)}
                     </>
                   )}
                 </small>
@@ -70,7 +71,7 @@ function TeamCard({
                   <strong>Members ({team.members.length}):</strong>{' '}
                   {team.members.map((member, idx) => (
                     <span key={member.id}>
-                      {member.user.preferred_name || member.user.name}
+                      {formatMemberNameWithPronouns(member)}
                       {member.user.id === team.team_lead?.id && (
                         <span className="badge bg-warning text-dark ms-1" style={{ fontSize: '0.65rem' }}>Lead</span>
                       )}
@@ -164,7 +165,7 @@ function TeamCard({
               {members.map((member) => (
                 <li key={member.id} className="mb-1">
                   <i className="bi bi-person-circle me-2"></i>
-                  {member.user.preferred_name || member.user.name}
+                  {formatMemberNameWithPronouns(member)}
                   {member.user.id === team.team_lead?.id && (
                     <span className="badge bg-warning text-dark ms-2">Lead</span>
                   )}

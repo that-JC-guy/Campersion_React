@@ -9,7 +9,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, theme, logout, toggleTheme } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -96,6 +96,12 @@ function Navbar() {
                     <i className="bi bi-flag me-2"></i>
                     My Camps
                   </Link>
+                </li>
+                <li>
+                  <button className="dropdown-item" onClick={toggleTheme}>
+                    <i className={`bi bi-${theme === 'dark' ? 'sun' : 'moon'} me-2`}></i>
+                    {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                  </button>
                 </li>
                 <li><hr className="dropdown-divider" /></li>
                 <li>

@@ -11,19 +11,19 @@
 
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { OverlayTrigger, Popover } from 'react-bootstrap';
 import {
   useCamp,
   useRequestCampMembership,
   useApproveCampMember,
   useRejectCampMember,
-  usePromoteCampMember,
-  useDemoteCampManager,
   useRequestEventAssociation
 } from '../../hooks/useCamps';
 import { useClusters, useUpdateCluster } from '../../hooks/useClusters';
 import { useUpdateTeam, useAddTeamMember, useRemoveTeamMember } from '../../hooks/useTeams';
 import { useUpdateCamp } from '../../hooks/useCamps';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatMemberNameWithPronouns, formatNameWithPronouns } from '../../utils/nameFormatter';
 
 function CampDetail() {
   const { campId } = useParams();
@@ -34,8 +34,6 @@ function CampDetail() {
   const requestMembershipMutation = useRequestCampMembership();
   const approveMemberMutation = useApproveCampMember();
   const rejectMemberMutation = useRejectCampMember();
-  const promoteMutation = usePromoteCampMember();
-  const demoteMutation = useDemoteCampManager();
   const requestEventMutation = useRequestEventAssociation();
   const updateCampMutation = useUpdateCamp();
   const updateClusterMutation = useUpdateCluster();
@@ -52,7 +50,6 @@ function CampDetail() {
     details: false,
     members: false,
     inventory: false,
-    memberManagement: false,
     organization: false,
     events: false
   });
@@ -88,18 +85,6 @@ function CampDetail() {
   const handleRejectMember = (userId, userName) => {
     if (window.confirm(`Reject ${userName}'s membership request?`)) {
       rejectMemberMutation.mutate({ campId: parseInt(campId), userId });
-    }
-  };
-
-  const handlePromote = (userId, userName) => {
-    if (window.confirm(`Promote ${userName} to camp manager?`)) {
-      promoteMutation.mutate({ campId: parseInt(campId), userId });
-    }
-  };
-
-  const handleDemote = (userId, userName) => {
-    if (window.confirm(`Demote ${userName} to regular member?`)) {
-      demoteMutation.mutate({ campId: parseInt(campId), userId });
     }
   };
 
@@ -232,8 +217,21 @@ function CampDetail() {
 
   return (
     <div className="container mt-4">
+      {/* Breadcrumbs */}
+      <nav aria-label="breadcrumb">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item">
+            <Link to="/camps">Camps</Link>
+          </li>
+          <li className="breadcrumb-item active">{camp.name}</li>
+        </ol>
+      </nav>
+
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2><i className="bi bi-flag me-2"></i>{camp.name}</h2>
+        <h2>
+          <img src="/Camp.png" alt="Camp" style={{ height: '68px', width: 'auto' }} className="me-2" />
+          {camp.name}
+        </h2>
         <div className="btn-group">
           <Link to="/camps" className="btn btn-outline-secondary">
             <i className="bi bi-arrow-left me-2"></i>Back
@@ -311,10 +309,18 @@ function CampDetail() {
                 {camp.has_art_exhibits && <span className="badge bg-success me-1 mb-1">Art Exhibits</span>}
                 {camp.has_member_activities && <span className="badge bg-success me-1 mb-1">Member Activities</span>}
                 {camp.has_non_member_activities && <span className="badge bg-success me-1 mb-1">Public Activities</span>}
-                {camp.custom_amenities && (
-                  <div className="mt-1">
-                    <small className="text-muted">{camp.custom_amenities}</small>
-                  </div>
+                {camp.custom_amenities &&
+                  camp.custom_amenities.split(',').map((amenity, index) => (
+                    amenity.trim() && <span key={index} className="badge bg-success me-1 mb-1">{amenity.trim()}</span>
+                  ))
+                }
+                {!camp.has_communal_kitchen &&
+                 !camp.has_communal_space &&
+                 !camp.has_art_exhibits &&
+                 !camp.has_member_activities &&
+                 !camp.has_non_member_activities &&
+                 !camp.custom_amenities && (
+                  <span className="text-muted">No amenities listed</span>
                 )}
               </div>
             </div>
@@ -353,7 +359,7 @@ function CampDetail() {
                         <div key={member.id} className="list-group-item">
                           <div className="d-flex justify-content-between align-items-center">
                             <div>
-                              <strong>{member.user.name}</strong>
+                              <strong>{formatMemberNameWithPronouns(member, { usePreferredName: false })}</strong>
                               {isMember && (
                                 <>
                                   <br />
@@ -377,7 +383,7 @@ function CampDetail() {
                       {camp.members.regular_members.map((member) => (
                         <div key={member.id} className="list-group-item">
                           <div>
-                            <strong>{member.user.name}</strong>
+                            <strong>{formatMemberNameWithPronouns(member, { usePreferredName: false })}</strong>
                             {isMember && (
                               <>
                                 <br />
@@ -428,7 +434,7 @@ function CampDetail() {
                 <div className="card mb-3 border-primary">
                   <div className="card-header bg-primary text-white">
                     <h6 className="mb-0">
-                      <i className="bi bi-flag me-2"></i>
+                      <img src="/Camp.png" alt="Camp" style={{ height: '20px', width: 'auto' }} className="me-2" />
                       Camp Leadership
                     </h6>
                   </div>
@@ -441,14 +447,14 @@ function CampDetail() {
                             <div>
                               <i className="bi bi-person-badge me-1"></i>
                               <strong>Camp Lead:</strong>{' '}
-                              {camp.camp_lead.preferred_name || camp.camp_lead.name}
+                              {formatNameWithPronouns(camp.camp_lead)}
                             </div>
                           )}
                           {camp.backup_camp_lead && (
                             <div>
                               <i className="bi bi-person-badge me-1"></i>
                               <strong>Backup Lead:</strong>{' '}
-                              {camp.backup_camp_lead.preferred_name || camp.backup_camp_lead.name}
+                              {formatNameWithPronouns(camp.backup_camp_lead)}
                             </div>
                           )}
                         </small>
@@ -458,46 +464,86 @@ function CampDetail() {
                     {/* Camp Leadership Self-Assignment Checkboxes */}
                     <div className="d-flex flex-wrap gap-3">
                       {camp.enable_camp_lead && (
-                        <div className="form-check">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="camp-lead-volunteer"
-                            checked={camp.camp_lead?.id === user?.id}
-                            onChange={() => handleToggleCampLead(camp.camp_lead?.id === user?.id)}
-                            disabled={camp.camp_lead && camp.camp_lead.id !== user?.id}
-                            title={camp.camp_lead && camp.camp_lead.id !== user?.id ? "Role is currently filled" : ""}
-                          />
-                          <label className="form-check-label" htmlFor="camp-lead-volunteer">
-                            <strong>Camp Lead</strong>
-                            {camp.camp_lead && camp.camp_lead.id !== user?.id && (
-                              <span className="text-muted ms-1">
-                                ({camp.camp_lead.preferred_name || camp.camp_lead.name})
-                              </span>
-                            )}
-                          </label>
-                        </div>
+                        <OverlayTrigger
+                          trigger={camp.backup_camp_lead?.id === user?.id ? ['click', 'focus'] : []}
+                          placement="top"
+                          overlay={
+                            <Popover id="camp-lead-popover">
+                              <Popover.Header as="h3">Cannot Assign Both Roles</Popover.Header>
+                              <Popover.Body>
+                                You cannot be both Camp Lead and Backup Camp Lead at the same time.
+                                Please uncheck Backup Camp Lead first if you want to volunteer as Camp Lead.
+                              </Popover.Body>
+                            </Popover>
+                          }
+                        >
+                          <div className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id="camp-lead-volunteer"
+                              checked={camp.camp_lead?.id === user?.id}
+                              onChange={() => handleToggleCampLead(camp.camp_lead?.id === user?.id)}
+                              disabled={(camp.camp_lead && camp.camp_lead.id !== user?.id) || (camp.backup_camp_lead?.id === user?.id)}
+                              title={
+                                camp.backup_camp_lead?.id === user?.id
+                                  ? ""
+                                  : camp.camp_lead && camp.camp_lead.id !== user?.id
+                                  ? "Role is currently filled"
+                                  : ""
+                              }
+                            />
+                            <label className="form-check-label" htmlFor="camp-lead-volunteer">
+                              <strong>Camp Lead</strong>
+                              {camp.camp_lead && camp.camp_lead.id !== user?.id && (
+                                <span className="text-muted ms-1">
+                                  ({formatNameWithPronouns(camp.camp_lead)})
+                                </span>
+                              )}
+                            </label>
+                          </div>
+                        </OverlayTrigger>
                       )}
                       {camp.enable_backup_camp_lead && (
-                        <div className="form-check">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="backup-camp-lead-volunteer"
-                            checked={camp.backup_camp_lead?.id === user?.id}
-                            onChange={() => handleToggleBackupCampLead(camp.backup_camp_lead?.id === user?.id)}
-                            disabled={camp.backup_camp_lead && camp.backup_camp_lead.id !== user?.id}
-                            title={camp.backup_camp_lead && camp.backup_camp_lead.id !== user?.id ? "Role is currently filled" : ""}
-                          />
-                          <label className="form-check-label" htmlFor="backup-camp-lead-volunteer">
-                            <strong>Backup Camp Lead</strong>
-                            {camp.backup_camp_lead && camp.backup_camp_lead.id !== user?.id && (
-                              <span className="text-muted ms-1">
-                                ({camp.backup_camp_lead.preferred_name || camp.backup_camp_lead.name})
-                              </span>
-                            )}
-                          </label>
-                        </div>
+                        <OverlayTrigger
+                          trigger={camp.camp_lead?.id === user?.id ? ['click', 'focus'] : []}
+                          placement="top"
+                          overlay={
+                            <Popover id="backup-camp-lead-popover">
+                              <Popover.Header as="h3">Cannot Assign Both Roles</Popover.Header>
+                              <Popover.Body>
+                                You cannot be both Camp Lead and Backup Camp Lead at the same time.
+                                Please uncheck Camp Lead first if you want to volunteer as Backup Camp Lead.
+                              </Popover.Body>
+                            </Popover>
+                          }
+                        >
+                          <div className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id="backup-camp-lead-volunteer"
+                              checked={camp.backup_camp_lead?.id === user?.id}
+                              onChange={() => handleToggleBackupCampLead(camp.backup_camp_lead?.id === user?.id)}
+                              disabled={(camp.backup_camp_lead && camp.backup_camp_lead.id !== user?.id) || (camp.camp_lead?.id === user?.id)}
+                              title={
+                                camp.camp_lead?.id === user?.id
+                                  ? ""
+                                  : camp.backup_camp_lead && camp.backup_camp_lead.id !== user?.id
+                                  ? "Role is currently filled"
+                                  : ""
+                              }
+                            />
+                            <label className="form-check-label" htmlFor="backup-camp-lead-volunteer">
+                              <strong>Backup Camp Lead</strong>
+                              {camp.backup_camp_lead && camp.backup_camp_lead.id !== user?.id && (
+                                <span className="text-muted ms-1">
+                                  ({formatNameWithPronouns(camp.backup_camp_lead)})
+                                </span>
+                              )}
+                            </label>
+                          </div>
+                        </OverlayTrigger>
                       )}
                     </div>
                   </div>
@@ -510,7 +556,7 @@ function CampDetail() {
 
                 return (
                   <div key={cluster.id} className="card mb-3 border-secondary">
-                    <div className="card-header bg-light">
+                    <div className="card-header">
                       <div className="d-flex align-items-start">
                         <div className="flex-grow-1">
                           <h6 className="mb-2">
@@ -532,14 +578,14 @@ function CampDetail() {
                                   <div>
                                     <i className="bi bi-person-badge me-1"></i>
                                     <strong>Cluster Lead:</strong>{' '}
-                                    {cluster.cluster_lead.preferred_name || cluster.cluster_lead.name}
+                                    {formatNameWithPronouns(cluster.cluster_lead)}
                                   </div>
                                 )}
                                 {cluster.backup_cluster_lead && (
                                   <div>
                                     <i className="bi bi-person-badge me-1"></i>
                                     <strong>Backup Lead:</strong>{' '}
-                                    {cluster.backup_cluster_lead.preferred_name || cluster.backup_cluster_lead.name}
+                                    {formatNameWithPronouns(cluster.backup_cluster_lead)}
                                   </div>
                                 )}
                               </small>
@@ -549,46 +595,86 @@ function CampDetail() {
                           {/* Cluster Leadership Self-Assignment */}
                           <div className="d-flex flex-wrap gap-3 mt-2">
                             {cluster.enable_cluster_lead && (
-                              <div className="form-check">
-                                <input
-                                  className="form-check-input"
-                                  type="checkbox"
-                                  id={`cluster-lead-${cluster.id}`}
-                                  checked={isClusterLead}
-                                  onChange={() => handleToggleClusterLead(cluster, isClusterLead)}
-                                  disabled={cluster.cluster_lead && cluster.cluster_lead.id !== user?.id}
-                                  title={cluster.cluster_lead && cluster.cluster_lead.id !== user?.id ? "Role is currently filled" : ""}
-                                />
-                                <label className="form-check-label small" htmlFor={`cluster-lead-${cluster.id}`}>
-                                  Cluster Lead
-                                  {cluster.cluster_lead && !isClusterLead && (
-                                    <span className="text-muted ms-1">
-                                      ({cluster.cluster_lead.preferred_name || cluster.cluster_lead.name})
-                                    </span>
-                                  )}
-                                </label>
-                              </div>
+                              <OverlayTrigger
+                                trigger={isBackupClusterLead ? ['click', 'focus'] : []}
+                                placement="top"
+                                overlay={
+                                  <Popover id={`cluster-lead-popover-${cluster.id}`}>
+                                    <Popover.Header as="h3">Cannot Assign Both Roles</Popover.Header>
+                                    <Popover.Body>
+                                      You cannot be both Cluster Lead and Backup Cluster Lead for the same cluster at the same time.
+                                      Please uncheck Backup Cluster Lead first if you want to volunteer as Cluster Lead.
+                                    </Popover.Body>
+                                  </Popover>
+                                }
+                              >
+                                <div className="form-check">
+                                  <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    id={`cluster-lead-${cluster.id}`}
+                                    checked={isClusterLead}
+                                    onChange={() => handleToggleClusterLead(cluster, isClusterLead)}
+                                    disabled={(cluster.cluster_lead && cluster.cluster_lead.id !== user?.id) || isBackupClusterLead}
+                                    title={
+                                      isBackupClusterLead
+                                        ? ""
+                                        : cluster.cluster_lead && cluster.cluster_lead.id !== user?.id
+                                        ? "Role is currently filled"
+                                        : ""
+                                    }
+                                  />
+                                  <label className="form-check-label small" htmlFor={`cluster-lead-${cluster.id}`}>
+                                    Cluster Lead
+                                    {cluster.cluster_lead && !isClusterLead && (
+                                      <span className="text-muted ms-1">
+                                        ({formatNameWithPronouns(cluster.cluster_lead)})
+                                      </span>
+                                    )}
+                                  </label>
+                                </div>
+                              </OverlayTrigger>
                             )}
                             {cluster.enable_backup_cluster_lead && (
-                              <div className="form-check">
-                                <input
-                                  className="form-check-input"
-                                  type="checkbox"
-                                  id={`backup-cluster-lead-${cluster.id}`}
-                                  checked={isBackupClusterLead}
-                                  onChange={() => handleToggleBackupClusterLead(cluster, isBackupClusterLead)}
-                                  disabled={cluster.backup_cluster_lead && cluster.backup_cluster_lead.id !== user?.id}
-                                  title={cluster.backup_cluster_lead && cluster.backup_cluster_lead.id !== user?.id ? "Role is currently filled" : ""}
-                                />
-                                <label className="form-check-label small" htmlFor={`backup-cluster-lead-${cluster.id}`}>
-                                  Backup Cluster Lead
-                                  {cluster.backup_cluster_lead && !isBackupClusterLead && (
-                                    <span className="text-muted ms-1">
-                                      ({cluster.backup_cluster_lead.preferred_name || cluster.backup_cluster_lead.name})
-                                    </span>
-                                  )}
-                                </label>
-                              </div>
+                              <OverlayTrigger
+                                trigger={isClusterLead ? ['click', 'focus'] : []}
+                                placement="top"
+                                overlay={
+                                  <Popover id={`backup-cluster-lead-popover-${cluster.id}`}>
+                                    <Popover.Header as="h3">Cannot Assign Both Roles</Popover.Header>
+                                    <Popover.Body>
+                                      You cannot be both Cluster Lead and Backup Cluster Lead for the same cluster at the same time.
+                                      Please uncheck Cluster Lead first if you want to volunteer as Backup Cluster Lead.
+                                    </Popover.Body>
+                                  </Popover>
+                                }
+                              >
+                                <div className="form-check">
+                                  <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    id={`backup-cluster-lead-${cluster.id}`}
+                                    checked={isBackupClusterLead}
+                                    onChange={() => handleToggleBackupClusterLead(cluster, isBackupClusterLead)}
+                                    disabled={(cluster.backup_cluster_lead && cluster.backup_cluster_lead.id !== user?.id) || isClusterLead}
+                                    title={
+                                      isClusterLead
+                                        ? ""
+                                        : cluster.backup_cluster_lead && cluster.backup_cluster_lead.id !== user?.id
+                                        ? "Role is currently filled"
+                                        : ""
+                                    }
+                                  />
+                                  <label className="form-check-label small" htmlFor={`backup-cluster-lead-${cluster.id}`}>
+                                    Backup Cluster Lead
+                                    {cluster.backup_cluster_lead && !isBackupClusterLead && (
+                                      <span className="text-muted ms-1">
+                                        ({formatNameWithPronouns(cluster.backup_cluster_lead)})
+                                      </span>
+                                    )}
+                                  </label>
+                                </div>
+                              </OverlayTrigger>
                             )}
                           </div>
                         </div>
@@ -606,7 +692,7 @@ function CampDetail() {
                           const isAnyLead = isTeamLead || isBackupTeamLead;
 
                           return (
-                            <div key={team.id} className="border rounded p-3 mb-2 bg-white">
+                            <div key={team.id} className="border rounded p-3 mb-2">
                               <div className="d-flex align-items-start">
                                 <div className="flex-grow-1">
                                   <h6 className="mb-1">
@@ -623,46 +709,86 @@ function CampDetail() {
                                   {/* Team Self-Assignment Checkboxes */}
                                   <div className="d-flex flex-wrap gap-3 mt-2">
                                     {team.enable_team_lead && (
-                                      <div className="form-check">
-                                        <input
-                                          className="form-check-input"
-                                          type="checkbox"
-                                          id={`team-lead-${team.id}`}
-                                          checked={isTeamLead}
-                                          onChange={() => handleToggleTeamLead(team, isTeamLead)}
-                                          disabled={team.team_lead && team.team_lead.id !== user?.id}
-                                          title={team.team_lead && team.team_lead.id !== user?.id ? "Role is currently filled" : ""}
-                                        />
-                                        <label className="form-check-label small" htmlFor={`team-lead-${team.id}`}>
-                                          Team Lead
-                                          {team.team_lead && !isTeamLead && (
-                                            <span className="text-muted ms-1">
-                                              ({team.team_lead.preferred_name || team.team_lead.name})
-                                            </span>
-                                          )}
-                                        </label>
-                                      </div>
+                                      <OverlayTrigger
+                                        trigger={isBackupTeamLead ? ['click', 'focus'] : []}
+                                        placement="top"
+                                        overlay={
+                                          <Popover id={`team-lead-popover-${team.id}`}>
+                                            <Popover.Header as="h3">Cannot Assign Both Roles</Popover.Header>
+                                            <Popover.Body>
+                                              You cannot be both Team Lead and Backup Team Lead for the same team at the same time.
+                                              Please uncheck Backup Team Lead first if you want to volunteer as Team Lead.
+                                            </Popover.Body>
+                                          </Popover>
+                                        }
+                                      >
+                                        <div className="form-check">
+                                          <input
+                                            className="form-check-input"
+                                            type="checkbox"
+                                            id={`team-lead-${team.id}`}
+                                            checked={isTeamLead}
+                                            onChange={() => handleToggleTeamLead(team, isTeamLead)}
+                                            disabled={(team.team_lead && team.team_lead.id !== user?.id) || isBackupTeamLead}
+                                            title={
+                                              isBackupTeamLead
+                                                ? ""
+                                                : team.team_lead && team.team_lead.id !== user?.id
+                                                ? "Role is currently filled"
+                                                : ""
+                                            }
+                                          />
+                                          <label className="form-check-label small" htmlFor={`team-lead-${team.id}`}>
+                                            Team Lead
+                                            {team.team_lead && !isTeamLead && (
+                                              <span className="text-muted ms-1">
+                                                ({formatNameWithPronouns(team.team_lead)})
+                                              </span>
+                                            )}
+                                          </label>
+                                        </div>
+                                      </OverlayTrigger>
                                     )}
                                     {team.enable_backup_team_lead && (
-                                      <div className="form-check">
-                                        <input
-                                          className="form-check-input"
-                                          type="checkbox"
-                                          id={`backup-team-lead-${team.id}`}
-                                          checked={isBackupTeamLead}
-                                          onChange={() => handleToggleBackupTeamLead(team, isBackupTeamLead)}
-                                          disabled={team.backup_team_lead && team.backup_team_lead.id !== user?.id}
-                                          title={team.backup_team_lead && team.backup_team_lead.id !== user?.id ? "Role is currently filled" : ""}
-                                        />
-                                        <label className="form-check-label small" htmlFor={`backup-team-lead-${team.id}`}>
-                                          Backup Team Lead
-                                          {team.backup_team_lead && !isBackupTeamLead && (
-                                            <span className="text-muted ms-1">
-                                              ({team.backup_team_lead.preferred_name || team.backup_team_lead.name})
-                                            </span>
-                                          )}
-                                        </label>
-                                      </div>
+                                      <OverlayTrigger
+                                        trigger={isTeamLead ? ['click', 'focus'] : []}
+                                        placement="top"
+                                        overlay={
+                                          <Popover id={`backup-team-lead-popover-${team.id}`}>
+                                            <Popover.Header as="h3">Cannot Assign Both Roles</Popover.Header>
+                                            <Popover.Body>
+                                              You cannot be both Team Lead and Backup Team Lead for the same team at the same time.
+                                              Please uncheck Team Lead first if you want to volunteer as Backup Team Lead.
+                                            </Popover.Body>
+                                          </Popover>
+                                        }
+                                      >
+                                        <div className="form-check">
+                                          <input
+                                            className="form-check-input"
+                                            type="checkbox"
+                                            id={`backup-team-lead-${team.id}`}
+                                            checked={isBackupTeamLead}
+                                            onChange={() => handleToggleBackupTeamLead(team, isBackupTeamLead)}
+                                            disabled={(team.backup_team_lead && team.backup_team_lead.id !== user?.id) || isTeamLead}
+                                            title={
+                                              isTeamLead
+                                                ? ""
+                                                : team.backup_team_lead && team.backup_team_lead.id !== user?.id
+                                                ? "Role is currently filled"
+                                                : ""
+                                            }
+                                          />
+                                          <label className="form-check-label small" htmlFor={`backup-team-lead-${team.id}`}>
+                                            Backup Team Lead
+                                            {team.backup_team_lead && !isBackupTeamLead && (
+                                              <span className="text-muted ms-1">
+                                                ({formatNameWithPronouns(team.backup_team_lead)})
+                                              </span>
+                                            )}
+                                          </label>
+                                        </div>
+                                      </OverlayTrigger>
                                     )}
                                     <div className="form-check">
                                       <input
@@ -691,14 +817,14 @@ function CampDetail() {
                                           <div>
                                             <i className="bi bi-person-badge me-1"></i>
                                             <strong>Team Lead:</strong>{' '}
-                                            {team.team_lead.preferred_name || team.team_lead.name}
+                                            {formatNameWithPronouns(team.team_lead)}
                                           </div>
                                         )}
                                         {team.backup_team_lead && (
                                           <div>
                                             <i className="bi bi-person-badge me-1"></i>
                                             <strong>Backup Lead:</strong>{' '}
-                                            {team.backup_team_lead.preferred_name || team.backup_team_lead.name}
+                                            {formatNameWithPronouns(team.backup_team_lead)}
                                           </div>
                                         )}
                                       </small>
@@ -715,7 +841,7 @@ function CampDetail() {
                                       <small className="d-block mt-1">
                                         {team.members.map((member, idx) => (
                                           <span key={member.id}>
-                                            {member.user.preferred_name || member.user.name}
+                                            {formatMemberNameWithPronouns(member)}
                                             {member.user.id === team.team_lead?.id && (
                                               <span className="badge bg-warning text-dark ms-1" style={{ fontSize: '0.65rem' }}>Lead</span>
                                             )}
@@ -810,7 +936,7 @@ function CampDetail() {
                   <div key={member.id} className="list-group-item">
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
-                        <strong>{member.user.name}</strong>
+                        <strong>{formatMemberNameWithPronouns(member, { usePreferredName: false })}</strong>
                         <br />
                         <small className="text-muted">{member.user.email}</small>
                       </div>
@@ -834,81 +960,6 @@ function CampDetail() {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Member Role Management - Only for managers with existing members */}
-      {canManage && camp.members && (camp.members.managers?.length > 0 || camp.members.regular_members?.length > 0) && (
-        <div className="card mb-3">
-          <div
-            className="card-header d-flex justify-content-between align-items-center"
-            style={{ cursor: 'pointer' }}
-            onClick={() => toggleSection('memberManagement')}
-          >
-            <h5 className="mb-0">
-              <i className="bi bi-gear me-2"></i>Manage Member Roles
-            </h5>
-            <i className={`bi bi-chevron-${collapsedSections.memberManagement ? 'down' : 'up'}`}></i>
-          </div>
-          <div className={`collapse ${!collapsedSections.memberManagement ? 'show' : ''}`}>
-            <div className="card-body">
-              {/* Managers */}
-              {camp.members.managers && camp.members.managers.length > 0 && (
-                <>
-                  <h6 className="text-primary">Managers</h6>
-                  <div className="list-group mb-3">
-                    {camp.members.managers.map((member) => (
-                      <div key={member.id} className="list-group-item">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div>
-                            <strong>{member.user.name}</strong>
-                            <br />
-                            <small className="text-muted">{member.user.email}</small>
-                          </div>
-                          {member.user.id !== user?.id && (
-                            <button
-                              className="btn btn-sm btn-outline-warning"
-                              onClick={() => handleDemote(member.user.id, member.user.name)}
-                              disabled={demoteMutation.isPending}
-                            >
-                              <i className="bi bi-arrow-down-circle me-1"></i>Demote
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {/* Regular Members */}
-              {camp.members.regular_members && camp.members.regular_members.length > 0 && (
-                <>
-                  <h6 className="text-success">Members</h6>
-                  <div className="list-group">
-                    {camp.members.regular_members.map((member) => (
-                      <div key={member.id} className="list-group-item">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div>
-                            <strong>{member.user.name}</strong>
-                            <br />
-                            <small className="text-muted">{member.user.email}</small>
-                          </div>
-                          <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => handlePromote(member.user.id, member.user.name)}
-                            disabled={promoteMutation.isPending}
-                          >
-                            <i className="bi bi-arrow-up-circle me-1"></i>Promote
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
             </div>
           </div>
         </div>

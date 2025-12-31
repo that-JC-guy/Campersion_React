@@ -47,6 +47,16 @@ function EventManagement() {
 
   return (
     <div className="container mt-4">
+      {/* Breadcrumbs */}
+      <nav aria-label="breadcrumb">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item">
+            <Link to="/admin">Admin</Link>
+          </li>
+          <li className="breadcrumb-item active">Event Management</li>
+        </ol>
+      </nav>
+
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>
           <i className="bi bi-calendar-event me-2"></i>Event Management
@@ -123,7 +133,12 @@ function EventManagement() {
                     <td>
                       <StatusBadge status={event.status} type="event" />
                     </td>
-                    <td>{event.creator_name || 'N/A'}</td>
+                    <td>
+                      {event.creator_name || 'N/A'}
+                      {event.creator_show_pronouns && event.creator_pronouns && (
+                        <small className="text-muted"> ({event.creator_pronouns})</small>
+                      )}
+                    </td>
                     <td>
                       <button
                         className="btn btn-sm btn-outline-primary"

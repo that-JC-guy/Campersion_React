@@ -37,6 +37,8 @@ def serialize_event(event, include_camps=False):
         'board_email': event.board_email,
         'creator_id': event.creator_id,
         'creator_name': event.creator.name if event.creator else None,
+        'creator_pronouns': event.creator.pronouns if event.creator else None,
+        'creator_show_pronouns': event.creator.show_pronouns if event.creator else False,
         'created_at': event.created_at.isoformat() if event.created_at else None
     }
 

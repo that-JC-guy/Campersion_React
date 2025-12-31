@@ -30,6 +30,7 @@ def serialize_user_profile(user):
         'role': user.role,
         'email_verified': user.email_verified,
         'is_active': user.is_active,
+        'theme_preference': user.theme_preference,
         'home_phone': user.home_phone,
         'mobile_phone': user.mobile_phone,
         'work_phone': user.work_phone,
@@ -187,6 +188,13 @@ def update_my_profile(current_user):
         country = data['country'].strip()
         if country:
             current_user.country = country
+
+    # Update theme preference
+    if 'theme_preference' in data:
+        theme = data['theme_preference']
+        if theme not in ['light', 'dark']:
+            return error_response('Theme preference must be "light" or "dark"'), 400
+        current_user.theme_preference = theme
 
     db.session.commit()
 

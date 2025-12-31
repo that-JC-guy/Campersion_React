@@ -84,7 +84,10 @@ function EventsList() {
   return (
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2><i className="bi bi-calendar-event me-2"></i>Events</h2>
+        <h2>
+          <img src="/Event.png" alt="Event" style={{ height: '68px', width: 'auto' }} className="me-2" />
+          Events
+        </h2>
         {canCreateEvents && (
           <Link to="/events/create" className="btn btn-primary">
             <i className="bi bi-plus-circle me-2"></i>Create Event
@@ -143,7 +146,10 @@ function EventsList() {
 
                       <p className="card-text">
                         <small className="text-muted">
-                          Created by {event.creator_name} on {formatDate(event.created_at)}
+                          Created by {event.creator_name}
+                          {event.creator_show_pronouns && event.creator_pronouns && (
+                            <> ({event.creator_pronouns})</>
+                          )} on {formatDate(event.created_at)}
                         </small>
                       </p>
                     </div>

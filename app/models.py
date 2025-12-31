@@ -172,6 +172,9 @@ class User(UserMixin, db.Model):
     # Account status for soft delete/suspension
     is_active = db.Column(db.Boolean, default=True, nullable=False, server_default='true')
 
+    # Theme preference for dark mode
+    theme_preference = db.Column(db.String(20), nullable=False, default='light', server_default='light')
+
     # Password reset functionality
     password_reset_token = db.Column(db.String(100), unique=True, nullable=True)
     password_reset_sent_at = db.Column(db.DateTime, nullable=True)

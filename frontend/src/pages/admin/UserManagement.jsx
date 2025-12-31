@@ -6,12 +6,13 @@
  */
 
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAllUsers, useSuspendUser, useReactivateUser } from '../../hooks/useAdmin';
 import { useAuth } from '../../contexts/AuthContext';
 import StatusBadge from '../../components/admin/StatusBadge';
 import ConfirmActionModal from '../../components/admin/ConfirmActionModal';
 import AddUserModal from './AddUserModal';
+import { formatNameWithPronouns } from '../../utils/nameFormatter';
 
 function UserManagement() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -89,6 +90,16 @@ function UserManagement() {
 
   return (
     <div className="container mt-4">
+      {/* Breadcrumbs */}
+      <nav aria-label="breadcrumb">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item">
+            <Link to="/admin">Admin</Link>
+          </li>
+          <li className="breadcrumb-item active">User Management</li>
+        </ol>
+      </nav>
+
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>
           <i className="bi bi-people me-2"></i>User Management
@@ -180,7 +191,7 @@ function UserManagement() {
               <tbody>
                 {users.map((user) => (
                   <tr key={user.id}>
-                    <td>{user.name}</td>
+                    <td>{formatNameWithPronouns(user, { usePreferredName: false })}</td>
                     <td>{user.email}</td>
                     <td>
                       <span className="badge bg-secondary">

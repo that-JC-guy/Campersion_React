@@ -69,13 +69,17 @@ def serialize_camp(camp, include_members=False, include_inventory=False):
             'id': camp.camp_lead.id,
             'name': camp.camp_lead.name,
             'email': camp.camp_lead.email,
-            'preferred_name': camp.camp_lead.preferred_name
+            'preferred_name': camp.camp_lead.preferred_name,
+            'pronouns': camp.camp_lead.pronouns,
+            'show_pronouns': camp.camp_lead.show_pronouns
         } if camp.camp_lead and camp.enable_camp_lead else None,
         'backup_camp_lead': {
             'id': camp.backup_camp_lead.id,
             'name': camp.backup_camp_lead.name,
             'email': camp.backup_camp_lead.email,
-            'preferred_name': camp.backup_camp_lead.preferred_name
+            'preferred_name': camp.backup_camp_lead.preferred_name,
+            'pronouns': camp.backup_camp_lead.pronouns,
+            'show_pronouns': camp.backup_camp_lead.show_pronouns
         } if camp.backup_camp_lead and camp.enable_backup_camp_lead else None,
         'cluster_count': len(camp.clusters) if hasattr(camp, 'clusters') else 0,
         'created_at': camp.created_at.isoformat() if camp.created_at else None
@@ -144,7 +148,10 @@ def serialize_camp_member(member):
         'user': {
             'id': member.user.id,
             'name': member.user.name,
-            'email': member.user.email
+            'email': member.user.email,
+            'preferred_name': member.user.preferred_name,
+            'pronouns': member.user.pronouns,
+            'show_pronouns': member.user.show_pronouns
         },
         'status': member.status,
         'role': member.role,

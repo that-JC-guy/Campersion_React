@@ -36,13 +36,17 @@ def serialize_cluster(cluster, include_teams=False):
             'id': cluster.cluster_lead.id,
             'name': cluster.cluster_lead.name,
             'email': cluster.cluster_lead.email,
-            'preferred_name': cluster.cluster_lead.preferred_name
+            'preferred_name': cluster.cluster_lead.preferred_name,
+            'pronouns': cluster.cluster_lead.pronouns,
+            'show_pronouns': cluster.cluster_lead.show_pronouns
         } if cluster.cluster_lead and cluster.enable_cluster_lead else None,
         'backup_cluster_lead': {
             'id': cluster.backup_cluster_lead.id,
             'name': cluster.backup_cluster_lead.name,
             'email': cluster.backup_cluster_lead.email,
-            'preferred_name': cluster.backup_cluster_lead.preferred_name
+            'preferred_name': cluster.backup_cluster_lead.preferred_name,
+            'pronouns': cluster.backup_cluster_lead.pronouns,
+            'show_pronouns': cluster.backup_cluster_lead.show_pronouns
         } if cluster.backup_cluster_lead and cluster.enable_backup_cluster_lead else None,
         'team_count': team_count,
         'created_at': cluster.created_at.isoformat(),

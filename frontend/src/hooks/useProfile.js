@@ -34,8 +34,21 @@ export const useUpdateProfile = () => {
   return useMutation({
     mutationFn: updateProfile,
     onSuccess: (data) => {
+      // Invalidate profile and auth queries
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       queryClient.invalidateQueries({ queryKey: ['auth-user'] });
+
+      // Invalidate all other queries since user data appears in camps, teams, events, etc.
+      // This ensures pronouns changes are reflected everywhere immediately
+      queryClient.invalidateQueries({ queryKey: ['camps'] });
+      queryClient.invalidateQueries({ queryKey: ['camp'] });
+      queryClient.invalidateQueries({ queryKey: ['clusters'] });
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+      queryClient.invalidateQueries({ queryKey: ['team'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['event'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+
       toast.success(data.message || 'Profile updated successfully!');
     },
     onError: (error) => {

@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import TeamCard from './TeamCard';
+import { formatNameWithPronouns } from '../../utils/nameFormatter';
 
 function ClusterCard({
   cluster,
@@ -66,13 +67,13 @@ function ClusterCard({
       </div>
 
       {(cluster.cluster_lead || cluster.backup_cluster_lead) && (
-        <div className="card-body py-2 bg-light">
+        <div className="card-body py-2">
           <small>
             {cluster.cluster_lead && (
               <>
                 <i className="bi bi-person-badge me-1"></i>
                 <strong>Cluster Lead:</strong>{' '}
-                {cluster.cluster_lead.preferred_name || cluster.cluster_lead.name}
+                {formatNameWithPronouns(cluster.cluster_lead)}
               </>
             )}
             {cluster.backup_cluster_lead && (
@@ -80,7 +81,7 @@ function ClusterCard({
                 {cluster.cluster_lead && <span className="mx-2">|</span>}
                 <i className="bi bi-person-badge me-1"></i>
                 <strong>Backup:</strong>{' '}
-                {cluster.backup_cluster_lead.preferred_name || cluster.backup_cluster_lead.name}
+                {formatNameWithPronouns(cluster.backup_cluster_lead)}
               </>
             )}
           </small>

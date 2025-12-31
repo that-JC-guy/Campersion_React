@@ -104,6 +104,25 @@ function EventForm() {
 
   return (
     <div className="container mt-4">
+      {/* Breadcrumbs */}
+      <nav aria-label="breadcrumb">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item">
+            <Link to="/events">Events</Link>
+          </li>
+          {isEditing && event ? (
+            <>
+              <li className="breadcrumb-item">
+                <Link to={`/events/${eventId}`}>{event.title}</Link>
+              </li>
+              <li className="breadcrumb-item active">Edit</li>
+            </>
+          ) : (
+            <li className="breadcrumb-item active">Create Event</li>
+          )}
+        </ol>
+      </nav>
+
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>
           <i className="bi bi-calendar-event me-2"></i>

@@ -8,16 +8,20 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { useCamp, useCreateCamp, useUpdateCamp } from '../../hooks/useCamps';
+import { useCamp, useCreateCamp, useUpdateCamp, usePromoteCampMember, useDemoteCampManager } from '../../hooks/useCamps';
+import { useAuth } from '../../contexts/AuthContext';
 
 function CampForm() {
   const { campId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const isEditing = !!campId;
 
   const { data: camp, isLoading: loadingCamp } = useCamp(campId ? parseInt(campId) : null);
   const createMutation = useCreateCamp();
   const updateMutation = useUpdateCamp();
+  const promoteMutation = usePromoteCampMember();
+  const demoteMutation = useDemoteCampManager();
 
   const {
     register,
@@ -84,6 +88,18 @@ function CampForm() {
     }
   };
 
+  const handlePromote = (userId, userName) => {
+    if (window.confirm(`Promote ${userName} to camp manager?`)) {
+      promoteMutation.mutate({ campId: parseInt(campId), userId });
+    }
+  };
+
+  const handleDemote = (userId, userName) => {
+    if (window.confirm(`Demote ${userName} to regular member?`)) {
+      demoteMutation.mutate({ campId: parseInt(campId), userId });
+    }
+  };
+
   if (isEditing && loadingCamp) {
     return (
       <div className="container mt-4">
@@ -98,6 +114,25 @@ function CampForm() {
 
   return (
     <div className="container mt-4">
+      {/* Breadcrumbs */}
+      <nav aria-label="breadcrumb">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item">
+            <Link to="/camps">Camps</Link>
+          </li>
+          {isEditing && camp ? (
+            <>
+              <li className="breadcrumb-item">
+                <Link to={`/camps/${campId}`}>{camp.name}</Link>
+              </li>
+              <li className="breadcrumb-item active">Edit</li>
+            </>
+          ) : (
+            <li className="breadcrumb-item active">Create Camp</li>
+          )}
+        </ol>
+      </nav>
+
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>
           <i className="bi bi-flag me-2"></i>
@@ -353,6 +388,74 @@ function CampForm() {
           </div>
         )}
       </form>
+
+      {/* Member Role Management - Only shown when editing */}
+      {isEditing && camp && camp.members && (camp.members.managers?.length > 0 || camp.members.regular_members?.length > 0) && (
+        <div className="card mt-4">
+          <div className="card-header">
+            <h5 className="mb-0">
+              <i className="bi bi-gear me-2"></i>Manage Member Roles
+            </h5>
+          </div>
+          <div className="card-body">
+            {/* Managers */}
+            {camp.members.managers && camp.members.managers.length > 0 && (
+              <>
+                <h6 className="text-primary">Managers</h6>
+                <div className="list-group mb-3">
+                  {camp.members.managers.map((member) => (
+                    <div key={member.id} className="list-group-item">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                          <strong>{member.user.name}</strong>
+                          <br />
+                          <small className="text-muted">{member.user.email}</small>
+                        </div>
+                        {member.user.id !== user?.id && (
+                          <button
+                            className="btn btn-sm btn-outline-warning"
+                            onClick={() => handleDemote(member.user.id, member.user.name)}
+                            disabled={demoteMutation.isPending}
+                          >
+                            <i className="bi bi-arrow-down-circle me-1"></i>Demote
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Regular Members */}
+            {camp.members.regular_members && camp.members.regular_members.length > 0 && (
+              <>
+                <h6 className="text-success">Members</h6>
+                <div className="list-group">
+                  {camp.members.regular_members.map((member) => (
+                    <div key={member.id} className="list-group-item">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <div>
+                          <strong>{member.user.name}</strong>
+                          <br />
+                          <small className="text-muted">{member.user.email}</small>
+                        </div>
+                        <button
+                          className="btn btn-sm btn-outline-primary"
+                          onClick={() => handlePromote(member.user.id, member.user.name)}
+                          disabled={promoteMutation.isPending}
+                        >
+                          <i className="bi bi-arrow-up-circle me-1"></i>Promote
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

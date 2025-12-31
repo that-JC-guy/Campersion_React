@@ -32,6 +32,7 @@ def serialize_user(user):
         'preferred_name': user.preferred_name,
         'role': user.role,
         'is_active': user.is_active,
+        'theme_preference': user.theme_preference,
         'email_verified': user.email_verified,
         'picture': user.picture,
         'has_password_auth': user.has_password_auth,

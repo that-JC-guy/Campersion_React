@@ -70,8 +70,21 @@ function EditProfile() {
 
   return (
     <div className="container mt-4">
+      {/* Breadcrumbs */}
+      <nav aria-label="breadcrumb">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item">
+            <Link to="/profile">Profile</Link>
+          </li>
+          <li className="breadcrumb-item active">Edit</li>
+        </ol>
+      </nav>
+
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2><i className="bi bi-pencil-square me-2"></i>Edit Profile</h2>
+        <h2>
+          <img src="/Member.png" alt="Member" style={{ height: '68px', width: 'auto' }} className="me-2" />
+          Edit Profile
+        </h2>
         <Link to="/profile" className="btn btn-outline-secondary">
           <i className="bi bi-arrow-left me-2"></i>Back to Profile
         </Link>

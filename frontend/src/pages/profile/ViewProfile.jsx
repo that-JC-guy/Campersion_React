@@ -61,8 +61,18 @@ function ViewProfile() {
 
   return (
     <div className="container mt-4">
+      {/* Breadcrumbs */}
+      <nav aria-label="breadcrumb">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item active">Profile</li>
+        </ol>
+      </nav>
+
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2><i className="bi bi-person-circle me-2"></i>My Profile</h2>
+        <h2>
+          <img src="/Member.png" alt="Member" style={{ height: '68px', width: 'auto' }} className="me-2" />
+          My Profile
+        </h2>
         <Link to="/profile/edit" className="btn btn-primary">
           <i className="bi bi-pencil me-2"></i>Edit Profile
         </Link>

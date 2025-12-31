@@ -174,6 +174,7 @@ function ClusterModal({ show, onHide, cluster, campId, campMembers }) {
                 availableMembers={campMembers}
                 onAssign={(userId) => setFormData(prev => ({ ...prev, cluster_lead_id: userId }))}
                 onClear={() => setFormData(prev => ({ ...prev, cluster_lead_id: null }))}
+                excludedUserId={formData.backup_cluster_lead_id}
               />
             )}
 
@@ -184,6 +185,7 @@ function ClusterModal({ show, onHide, cluster, campId, campMembers }) {
                 availableMembers={campMembers}
                 onAssign={(userId) => setFormData(prev => ({ ...prev, backup_cluster_lead_id: userId }))}
                 onClear={() => setFormData(prev => ({ ...prev, backup_cluster_lead_id: null }))}
+                excludedUserId={formData.cluster_lead_id}
               />
             )}
           </div>

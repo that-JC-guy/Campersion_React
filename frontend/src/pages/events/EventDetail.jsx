@@ -92,8 +92,21 @@ function EventDetail() {
 
   return (
     <div className="container mt-4">
+      {/* Breadcrumbs */}
+      <nav aria-label="breadcrumb">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item">
+            <Link to="/events">Events</Link>
+          </li>
+          <li className="breadcrumb-item active">{event.title}</li>
+        </ol>
+      </nav>
+
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2><i className="bi bi-calendar-event me-2"></i>{event.title}</h2>
+        <h2>
+          <img src="/Event.png" alt="Event" style={{ height: '68px', width: 'auto' }} className="me-2" />
+          {event.title}
+        </h2>
         <div className="btn-group">
           <Link to="/events" className="btn btn-outline-secondary">
             <i className="bi bi-arrow-left me-2"></i>Back
@@ -153,7 +166,12 @@ function EventDetail() {
 
           <div className="row mb-3">
             <div className="col-md-3 fw-bold">Created By:</div>
-            <div className="col-md-9">{event.creator_name}</div>
+            <div className="col-md-9">
+              {event.creator_name}
+              {event.creator_show_pronouns && event.creator_pronouns && (
+                <small className="text-muted"> ({event.creator_pronouns})</small>
+              )}
+            </div>
           </div>
 
           <div className="row">

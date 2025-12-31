@@ -176,6 +176,7 @@ function TeamModal({ show, onHide, team, clusterId, campId, campMembers }) {
                 availableMembers={campMembers}
                 onAssign={(userId) => setFormData(prev => ({ ...prev, team_lead_id: userId }))}
                 onClear={() => setFormData(prev => ({ ...prev, team_lead_id: null }))}
+                excludedUserId={formData.backup_team_lead_id}
               />
             )}
 
@@ -186,6 +187,7 @@ function TeamModal({ show, onHide, team, clusterId, campId, campMembers }) {
                 availableMembers={campMembers}
                 onAssign={(userId) => setFormData(prev => ({ ...prev, backup_team_lead_id: userId }))}
                 onClear={() => setFormData(prev => ({ ...prev, backup_team_lead_id: null }))}
+                excludedUserId={formData.team_lead_id}
               />
             )}
           </div>

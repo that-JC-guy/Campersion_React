@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import { useTeam } from '../../hooks/useTeams';
 import { useAddTeamMember, useRemoveTeamMember } from '../../hooks/useTeams';
+import { formatMemberNameWithPronouns } from '../../utils/nameFormatter';
 
 function TeamMembersModal({ show, onHide, team, campId, campMembers }) {
   const [selectedUserId, setSelectedUserId] = useState('');
@@ -80,7 +81,7 @@ function TeamMembersModal({ show, onHide, team, campId, campMembers }) {
                     <div key={member.id} className="list-group-item d-flex justify-content-between align-items-center">
                       <div>
                         <i className="bi bi-person-circle me-2"></i>
-                        <strong>{member.user.preferred_name || member.user.name}</strong>
+                        <strong>{formatMemberNameWithPronouns(member)}</strong>
                         <br />
                         <small className="text-muted">{member.user.email}</small>
                         {member.user.id === team?.team_lead?.id && (
@@ -118,10 +119,12 @@ function TeamMembersModal({ show, onHide, team, campId, campMembers }) {
                       const userId = member.user?.id || member.id;
                       const userName = member.user?.preferred_name || member.user?.name || member.preferred_name || member.name;
                       const userEmail = member.user?.email || member.email;
+                      const user = member.user || member;
+                      const pronouns = user.show_pronouns && user.pronouns ? ` (${user.pronouns})` : '';
 
                       return (
                         <option key={userId} value={userId}>
-                          {userName} ({userEmail})
+                          {userName}{pronouns} ({userEmail})
                         </option>
                       );
                     })}

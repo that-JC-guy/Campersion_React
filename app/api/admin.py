@@ -32,6 +32,8 @@ def serialize_user_admin(user):
         'id': user.id,
         'email': user.email,
         'name': user.name,
+        'pronouns': user.pronouns,
+        'show_pronouns': user.show_pronouns,
         'role': user.role,
         'is_active': user.is_active,
         'email_verified': user.email_verified,

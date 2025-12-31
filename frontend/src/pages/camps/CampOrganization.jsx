@@ -16,6 +16,7 @@ import ClusterModal from './ClusterModal';
 import TeamModal from './TeamModal';
 import TeamMembersModal from './TeamMembersModal';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatNameWithPronouns } from '../../utils/nameFormatter';
 
 function CampOrganization() {
   const { campId } = useParams();
@@ -204,7 +205,7 @@ function CampOrganization() {
                     {camp.camp_lead ? (
                       <div className="alert alert-info py-2 px-3">
                         <i className="bi bi-person-badge me-2"></i>
-                        <strong>{camp.camp_lead.preferred_name || camp.camp_lead.name}</strong>
+                        <strong>{formatNameWithPronouns(camp.camp_lead)}</strong>
                         <span className="badge bg-primary ms-2">Camp Lead</span>
                       </div>
                     ) : (
@@ -217,11 +218,17 @@ function CampOrganization() {
                         onChange={(e) => handleAssignCampLead(e.target.value ? parseInt(e.target.value) : null)}
                       >
                         <option value="">-- No Camp Lead --</option>
-                        {campMembers.map((member) => (
-                          <option key={member.user.id} value={member.user.id}>
-                            {member.user.preferred_name || member.user.name}
-                          </option>
-                        ))}
+                        {campMembers.map((member) => {
+                          const isBackupLead = camp.backup_camp_lead?.id && Number(camp.backup_camp_lead.id) === Number(member.user.id);
+                          const displayName = member.user.preferred_name || member.user.name;
+                          const pronouns = member.user.show_pronouns && member.user.pronouns ? ` (${member.user.pronouns})` : '';
+                          return (
+                            <option key={member.user.id} value={member.user.id} disabled={isBackupLead}>
+                              {displayName}{pronouns}
+                              {isBackupLead ? ' - Already assigned as Backup Camp Lead' : ''}
+                            </option>
+                          );
+                        })}
                       </select>
                     )}
                   </div>
@@ -235,7 +242,7 @@ function CampOrganization() {
                     {camp.backup_camp_lead ? (
                       <div className="alert alert-info py-2 px-3">
                         <i className="bi bi-person-badge me-2"></i>
-                        <strong>{camp.backup_camp_lead.preferred_name || camp.backup_camp_lead.name}</strong>
+                        <strong>{formatNameWithPronouns(camp.backup_camp_lead)}</strong>
                         <span className="badge bg-secondary ms-2">Backup Lead</span>
                       </div>
                     ) : (
@@ -248,11 +255,17 @@ function CampOrganization() {
                         onChange={(e) => handleAssignBackupCampLead(e.target.value ? parseInt(e.target.value) : null)}
                       >
                         <option value="">-- No Backup Camp Lead --</option>
-                        {campMembers.map((member) => (
-                          <option key={member.user.id} value={member.user.id}>
-                            {member.user.preferred_name || member.user.name}
-                          </option>
-                        ))}
+                        {campMembers.map((member) => {
+                          const isCampLead = camp.camp_lead?.id && Number(camp.camp_lead.id) === Number(member.user.id);
+                          const displayName = member.user.preferred_name || member.user.name;
+                          const pronouns = member.user.show_pronouns && member.user.pronouns ? ` (${member.user.pronouns})` : '';
+                          return (
+                            <option key={member.user.id} value={member.user.id} disabled={isCampLead}>
+                              {displayName}{pronouns}
+                              {isCampLead ? ' - Already assigned as Camp Lead' : ''}
+                            </option>
+                          );
+                        })}
                       </select>
                     )}
                   </div>

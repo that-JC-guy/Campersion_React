@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useInventory, useBulkUpdateInventory, useQuickAddInventoryItem, useDeleteInventoryItem } from '../../hooks/useInventory';
 
 function InventoryList() {
@@ -128,8 +129,18 @@ function InventoryList() {
 
   return (
     <div className="container mt-4">
+      {/* Breadcrumbs */}
+      <nav aria-label="breadcrumb">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item active">Inventory</li>
+        </ol>
+      </nav>
+
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2><i className="bi bi-box me-2"></i>My Inventory</h2>
+        <h2>
+          <img src="/Member.png" alt="Member" style={{ height: '68px', width: 'auto' }} className="me-2" />
+          My Inventory
+        </h2>
       </div>
 
       {/* Quick Add Buttons */}
@@ -222,7 +233,7 @@ function InventoryList() {
                   ))}
 
                   {/* Add New Item Row */}
-                  <tr className="table-light">
+                  <tr>
                     <td>
                       <input
                         type="text"

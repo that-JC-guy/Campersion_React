@@ -34,13 +34,17 @@ def serialize_team(team, include_members=False):
             'id': team.team_lead.id,
             'name': team.team_lead.name,
             'email': team.team_lead.email,
-            'preferred_name': team.team_lead.preferred_name
+            'preferred_name': team.team_lead.preferred_name,
+            'pronouns': team.team_lead.pronouns,
+            'show_pronouns': team.team_lead.show_pronouns
         } if team.team_lead and team.enable_team_lead else None,
         'backup_team_lead': {
             'id': team.backup_team_lead.id,
             'name': team.backup_team_lead.name,
             'email': team.backup_team_lead.email,
-            'preferred_name': team.backup_team_lead.preferred_name
+            'preferred_name': team.backup_team_lead.preferred_name,
+            'pronouns': team.backup_team_lead.pronouns,
+            'show_pronouns': team.backup_team_lead.show_pronouns
         } if team.backup_team_lead and team.enable_backup_team_lead else None,
         'member_count': member_count,
         'created_at': team.created_at.isoformat(),
@@ -62,7 +66,9 @@ def serialize_team_member(team_member):
             'id': team_member.user.id,
             'name': team_member.user.name,
             'email': team_member.user.email,
-            'preferred_name': team_member.user.preferred_name
+            'preferred_name': team_member.user.preferred_name,
+            'pronouns': team_member.user.pronouns,
+            'show_pronouns': team_member.user.show_pronouns
         },
         'joined_at': team_member.joined_at.isoformat()
     }
