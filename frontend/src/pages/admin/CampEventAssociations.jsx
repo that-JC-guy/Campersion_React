@@ -142,8 +142,16 @@ function CampEventAssociations() {
               <tbody>
                 {associations.map((association) => (
                   <tr key={association.id}>
-                    <td>{association.camp.name}</td>
-                    <td>{association.event.title}</td>
+                    <td>
+                      <Link to={`/camps/${association.camp.id}`} className="text-decoration-none">
+                        {association.camp.name}
+                      </Link>
+                    </td>
+                    <td>
+                      <Link to={`/events/${association.event.id}`} className="text-decoration-none">
+                        {association.event.title}
+                      </Link>
+                    </td>
                     <td>{association.event.location}</td>
                     <td>
                       <StatusBadge status={association.status} type="association" />

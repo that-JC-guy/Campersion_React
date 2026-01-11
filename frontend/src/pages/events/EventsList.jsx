@@ -10,12 +10,19 @@
 import { Link } from 'react-router-dom';
 import { useEvents, useApproveEvent, useRejectEvent } from '../../hooks/useEvents';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProfile } from '../../hooks/useProfile';
 
 function EventsList() {
   const { data, isLoading, error } = useEvents();
   const { user } = useAuth();
+  const { data: profileData } = useProfile();
   const approveMutation = useApproveEvent();
   const rejectMutation = useRejectEvent();
+
+  // Helper to check if user is registered for an event
+  const isRegisteredForEvent = (eventId) => {
+    return profileData?.event_registrations?.some(reg => reg.event.id === eventId) || false;
+  };
 
   // Helper to get status badge color
   const getStatusBadge = (status) => {
@@ -122,6 +129,11 @@ function EventsList() {
                         <span className={`badge ${getStatusBadge(event.status)} ms-2`}>
                           {event.status}
                         </span>
+                        {isRegisteredForEvent(event.id) && (
+                          <span className="badge bg-info ms-2">
+                            <i className="bi bi-check-circle me-1"></i>Registered
+                          </span>
+                        )}
                       </h5>
 
                       <p className="card-text text-muted mb-2">

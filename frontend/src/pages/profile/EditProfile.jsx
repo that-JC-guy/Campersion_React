@@ -90,7 +90,40 @@ function EditProfile() {
         </Link>
       </div>
 
+      {/* Info Alert - Show when no changes made */}
+      {!isDirty && (
+        <div className="alert alert-info">
+          <i className="bi bi-info-circle me-2"></i>
+          Make changes to the form to enable saving.
+        </div>
+      )}
+
       <form onSubmit={handleSubmit(onSubmit)}>
+        {/* Form Actions - Top */}
+        <div className="d-flex gap-2 mb-4">
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={updateMutation.isPending || !isDirty}
+          >
+            {updateMutation.isPending ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Saving...
+              </>
+            ) : (
+              <>
+                <i className="bi bi-save me-2"></i>
+                Save Changes
+              </>
+            )}
+          </button>
+
+          <Link to="/profile" className="btn btn-outline-secondary">
+            Cancel
+          </Link>
+        </div>
+
         {/* Personal Information */}
         <div className="card mb-4">
           <div className="card-header">
@@ -349,7 +382,7 @@ function EditProfile() {
           </div>
         </div>
 
-        {/* Form Actions */}
+        {/* Form Actions - Bottom */}
         <div className="d-flex gap-2 mb-4">
           <button
             type="submit"
@@ -373,13 +406,6 @@ function EditProfile() {
             Cancel
           </Link>
         </div>
-
-        {!isDirty && (
-          <div className="alert alert-info">
-            <i className="bi bi-info-circle me-2"></i>
-            Make changes to the form to enable saving.
-          </div>
-        )}
       </form>
     </div>
   );

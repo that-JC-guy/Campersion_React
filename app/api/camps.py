@@ -49,6 +49,28 @@ def is_user_camp_member(user, camp_id):
 
 def serialize_camp(camp, include_members=False, include_inventory=False):
     """Serialize camp to dictionary."""
+    # Find next upcoming event
+    from datetime import datetime
+    today = datetime.utcnow().date()
+
+    next_event = None
+    approved_associations = camp.event_associations.filter_by(
+        status=AssociationStatus.APPROVED.value
+    ).join(Event).filter(
+        Event.end_date >= today,
+        Event.status == EventStatus.APPROVED.value
+    ).order_by(Event.start_date.asc()).first()
+
+    if approved_associations:
+        event = approved_associations.event
+        next_event = {
+            'id': event.id,
+            'title': event.title,
+            'start_date': event.start_date.isoformat() if event.start_date else None,
+            'end_date': event.end_date.isoformat() if event.end_date else None,
+            'location': event.location
+        }
+
     data = {
         'id': camp.id,
         'name': camp.name,
@@ -70,6 +92,7 @@ def serialize_camp(camp, include_members=False, include_inventory=False):
             'name': camp.camp_lead.name,
             'email': camp.camp_lead.email,
             'preferred_name': camp.camp_lead.preferred_name,
+            'show_full_name': camp.camp_lead.show_full_name,
             'pronouns': camp.camp_lead.pronouns,
             'show_pronouns': camp.camp_lead.show_pronouns
         } if camp.camp_lead and camp.enable_camp_lead else None,
@@ -78,11 +101,13 @@ def serialize_camp(camp, include_members=False, include_inventory=False):
             'name': camp.backup_camp_lead.name,
             'email': camp.backup_camp_lead.email,
             'preferred_name': camp.backup_camp_lead.preferred_name,
+            'show_full_name': camp.backup_camp_lead.show_full_name,
             'pronouns': camp.backup_camp_lead.pronouns,
             'show_pronouns': camp.backup_camp_lead.show_pronouns
         } if camp.backup_camp_lead and camp.enable_backup_camp_lead else None,
         'cluster_count': len(camp.clusters) if hasattr(camp, 'clusters') else 0,
-        'created_at': camp.created_at.isoformat() if camp.created_at else None
+        'created_at': camp.created_at.isoformat() if camp.created_at else None,
+        'next_event': next_event
     }
 
     if include_members:
@@ -118,12 +143,16 @@ def serialize_camp(camp, include_members=False, include_inventory=False):
         ).order_by(InventoryItem.name.asc()).all() if approved_member_ids else []
 
         # Group shared inventory by item name
-        grouped_inventory = defaultdict(lambda: {'total_quantity': 0, 'owners': [], 'descriptions': []})
+        grouped_inventory = defaultdict(lambda: {'total_quantity': 0, 'owner_quantities': {}, 'descriptions': []})
 
         for item in shared_items:
             grouped_inventory[item.name]['total_quantity'] += item.quantity
             owner_name = item.owner.preferred_name or item.owner.first_name or item.owner.name
-            grouped_inventory[item.name]['owners'].append(owner_name)
+            # Track quantity per owner
+            if owner_name in grouped_inventory[item.name]['owner_quantities']:
+                grouped_inventory[item.name]['owner_quantities'][owner_name] += item.quantity
+            else:
+                grouped_inventory[item.name]['owner_quantities'][owner_name] = item.quantity
             if item.description and item.description not in grouped_inventory[item.name]['descriptions']:
                 grouped_inventory[item.name]['descriptions'].append(item.description)
 
@@ -132,7 +161,7 @@ def serialize_camp(camp, include_members=False, include_inventory=False):
             {
                 'name': name,
                 'total_quantity': info['total_quantity'],
-                'owners': ', '.join(info['owners']),
+                'owners': ', '.join([f"{owner} ({qty})" for owner, qty in info['owner_quantities'].items()]),
                 'description': '; '.join(info['descriptions']) if info['descriptions'] else None
             }
             for name, info in sorted(grouped_inventory.items())
@@ -150,6 +179,7 @@ def serialize_camp_member(member):
             'name': member.user.name,
             'email': member.user.email,
             'preferred_name': member.user.preferred_name,
+            'show_full_name': member.user.show_full_name,
             'pronouns': member.user.pronouns,
             'show_pronouns': member.user.show_pronouns
         },

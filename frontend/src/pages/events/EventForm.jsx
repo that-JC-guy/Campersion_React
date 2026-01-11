@@ -38,7 +38,16 @@ function EventForm() {
       safety_manager_phone: '',
       business_manager_email: '',
       business_manager_phone: '',
-      board_email: ''
+      board_email: '',
+      has_early_arrival: false,
+      early_arrival_days: '',
+      has_late_departure: false,
+      late_departure_days: '',
+      has_accessibility_assistance: false,
+      has_drinking_water: false,
+      has_ice_available: false,
+      has_vehicle_access: false,
+      custom_event_options: ''
     }
   });
 
@@ -57,7 +66,16 @@ function EventForm() {
         safety_manager_phone: event.safety_manager_phone || '',
         business_manager_email: event.business_manager_email || '',
         business_manager_phone: event.business_manager_phone || '',
-        board_email: event.board_email || ''
+        board_email: event.board_email || '',
+        has_early_arrival: event.has_early_arrival || false,
+        early_arrival_days: event.early_arrival_days || '',
+        has_late_departure: event.has_late_departure || false,
+        late_departure_days: event.late_departure_days || '',
+        has_accessibility_assistance: event.has_accessibility_assistance || false,
+        has_drinking_water: event.has_drinking_water || false,
+        has_ice_available: event.has_ice_available || false,
+        has_vehicle_access: event.has_vehicle_access || false,
+        custom_event_options: event.custom_event_options || ''
       });
     }
   }, [isEditing, event, reset]);
@@ -89,6 +107,8 @@ function EventForm() {
   };
 
   const startDate = watch('start_date');
+  const hasEarlyArrival = watch('has_early_arrival');
+  const hasLateDeparture = watch('has_late_departure');
 
   if (isEditing && loadingEvent) {
     return (
@@ -134,6 +154,34 @@ function EventForm() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
+        {/* Form Actions - Top */}
+        <div className="d-flex gap-2 mb-4">
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={createMutation.isPending || updateMutation.isPending || (isEditing && !isDirty)}
+          >
+            {createMutation.isPending || updateMutation.isPending ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Saving...
+              </>
+            ) : (
+              <>
+                <i className="bi bi-save me-2"></i>
+                {isEditing ? 'Save Changes' : 'Create Event'}
+              </>
+            )}
+          </button>
+
+          <Link
+            to={isEditing ? `/events/${eventId}` : '/events'}
+            className="btn btn-outline-secondary"
+          >
+            Cancel
+          </Link>
+        </div>
+
         {/* Basic Information */}
         <div className="card mb-4">
           <div className="card-header">
@@ -343,7 +391,167 @@ function EventForm() {
           </div>
         </div>
 
-        {/* Form Actions */}
+        {/* Event Options and Amenities */}
+        <div className="card mb-4">
+          <div className="card-header">
+            <h5 className="mb-0"><i className="bi bi-gear me-2"></i>Event Options and Amenities</h5>
+          </div>
+          <div className="card-body">
+            <p className="text-muted small mb-3">
+              <i className="bi bi-info-circle me-2"></i>
+              Event managers can configure additional event options and amenities for attendees.
+            </p>
+
+            <div className="row">
+              {/* Early Arrival */}
+              <div className="col-md-6 mb-3">
+                <div className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="has_early_arrival"
+                    {...register('has_early_arrival')}
+                  />
+                  <label className="form-check-label" htmlFor="has_early_arrival">
+                    <strong>Early Arrival</strong>
+                  </label>
+                </div>
+                {hasEarlyArrival && (
+                  <div className="mt-2 ms-4">
+                    <label htmlFor="early_arrival_days" className="form-label small">
+                      Days before event start
+                    </label>
+                    <input
+                      type="number"
+                      className={`form-control form-control-sm ${errors.early_arrival_days ? 'is-invalid' : ''}`}
+                      id="early_arrival_days"
+                      min="1"
+                      {...register('early_arrival_days', {
+                        min: { value: 1, message: 'Must be at least 1 day' }
+                      })}
+                    />
+                    {errors.early_arrival_days && (
+                      <div className="invalid-feedback">{errors.early_arrival_days.message}</div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Late Departure */}
+              <div className="col-md-6 mb-3">
+                <div className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="has_late_departure"
+                    {...register('has_late_departure')}
+                  />
+                  <label className="form-check-label" htmlFor="has_late_departure">
+                    <strong>Late Departure</strong>
+                  </label>
+                </div>
+                {hasLateDeparture && (
+                  <div className="mt-2 ms-4">
+                    <label htmlFor="late_departure_days" className="form-label small">
+                      Days after event end
+                    </label>
+                    <input
+                      type="number"
+                      className={`form-control form-control-sm ${errors.late_departure_days ? 'is-invalid' : ''}`}
+                      id="late_departure_days"
+                      min="1"
+                      {...register('late_departure_days', {
+                        min: { value: 1, message: 'Must be at least 1 day' }
+                      })}
+                    />
+                    {errors.late_departure_days && (
+                      <div className="invalid-feedback">{errors.late_departure_days.message}</div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Accessibility Assistance */}
+              <div className="col-md-6 mb-3">
+                <div className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="has_accessibility_assistance"
+                    {...register('has_accessibility_assistance')}
+                  />
+                  <label className="form-check-label" htmlFor="has_accessibility_assistance">
+                    <strong>Accessibility Assistance</strong>
+                  </label>
+                </div>
+              </div>
+
+              {/* Drinking Water Onsite */}
+              <div className="col-md-6 mb-3">
+                <div className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="has_drinking_water"
+                    {...register('has_drinking_water')}
+                  />
+                  <label className="form-check-label" htmlFor="has_drinking_water">
+                    <strong>Drinking Water Onsite</strong>
+                  </label>
+                </div>
+              </div>
+
+              {/* Ice Available */}
+              <div className="col-md-6 mb-3">
+                <div className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="has_ice_available"
+                    {...register('has_ice_available')}
+                  />
+                  <label className="form-check-label" htmlFor="has_ice_available">
+                    <strong>Ice Available</strong>
+                  </label>
+                </div>
+              </div>
+
+              {/* Vehicle Access */}
+              <div className="col-md-6 mb-3">
+                <div className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="has_vehicle_access"
+                    {...register('has_vehicle_access')}
+                  />
+                  <label className="form-check-label" htmlFor="has_vehicle_access">
+                    <strong>Vehicle Access</strong>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Custom Event Options */}
+            <div className="mb-0">
+              <label htmlFor="custom_event_options" className="form-label">
+                Custom Event Options
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                id="custom_event_options"
+                placeholder="e.g., Shuttle service, Bike parking, RV hookups"
+                {...register('custom_event_options')}
+              />
+              <div className="form-text">
+                List any other event options (comma-separated). These will be enabled by default.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Form Actions - Bottom */}
         <div className="d-flex gap-2 mb-4">
           <button
             type="submit"

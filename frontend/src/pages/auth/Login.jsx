@@ -168,8 +168,9 @@ function Login() {
                 {/* OAuth Buttons */}
                 <div className="d-grid gap-3 mb-4">
                   <button
-                    className="btn btn-outline-dark btn-lg d-flex align-items-center justify-content-center"
+                    className="btn btn-light btn-lg d-flex align-items-center justify-content-center border"
                     onClick={() => handleOAuthLogin('google')}
+                    style={{ color: '#000' }}
                   >
                     <i className="bi bi-google me-2"></i>
                     Continue with Google

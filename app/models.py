@@ -589,6 +589,17 @@ class Event(db.Model):
     # Relationship to User
     creator = db.relationship('User', backref='created_events', lazy=True)
 
+    # Event Options
+    has_early_arrival = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
+    early_arrival_days = db.Column(db.Integer, nullable=True)
+    has_late_departure = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
+    late_departure_days = db.Column(db.Integer, nullable=True)
+    has_accessibility_assistance = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
+    has_drinking_water = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
+    has_ice_available = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
+    has_vehicle_access = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
+    custom_event_options = db.Column(db.Text, nullable=True)
+
     # Timestamps
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow,
@@ -1127,3 +1138,47 @@ class InventoryItem(db.Model):
     def __repr__(self):
         """String representation of InventoryItem object."""
         return f'<InventoryItem {self.name} (qty: {self.quantity})>'
+
+
+class EventRegistration(db.Model):
+    """
+    Event registration model for tracking user event registrations.
+
+    Users can register for events and select optional features like
+    early arrival, late departure, and vehicle access.
+    """
+
+    __tablename__ = 'event_registrations'
+
+    # Primary key
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Foreign keys
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey('events.id'), nullable=False)
+
+    # Registration options
+    has_ticket = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
+    opted_early_arrival = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
+    opted_late_departure = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
+    opted_vehicle_access = db.Column(db.Boolean, nullable=False, default=False, server_default='false')
+
+    # Timestamps
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow,
+                          onupdate=datetime.utcnow)
+
+    # Relationships
+    user = db.relationship('User', backref=db.backref('event_registrations', lazy='dynamic',
+                                                       cascade='all, delete-orphan'))
+    event = db.relationship('Event', backref=db.backref('registrations', lazy='dynamic',
+                                                        cascade='all, delete-orphan'))
+
+    # Unique constraint - one registration per user per event
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'event_id', name='unique_user_event_registration'),
+    )
+
+    def __repr__(self):
+        """String representation of EventRegistration object."""
+        return f'<EventRegistration user_id={self.user_id} event_id={self.event_id}>'

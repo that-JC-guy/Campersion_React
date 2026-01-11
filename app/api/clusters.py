@@ -37,6 +37,7 @@ def serialize_cluster(cluster, include_teams=False):
             'name': cluster.cluster_lead.name,
             'email': cluster.cluster_lead.email,
             'preferred_name': cluster.cluster_lead.preferred_name,
+            'show_full_name': cluster.cluster_lead.show_full_name,
             'pronouns': cluster.cluster_lead.pronouns,
             'show_pronouns': cluster.cluster_lead.show_pronouns
         } if cluster.cluster_lead and cluster.enable_cluster_lead else None,
@@ -45,6 +46,7 @@ def serialize_cluster(cluster, include_teams=False):
             'name': cluster.backup_cluster_lead.name,
             'email': cluster.backup_cluster_lead.email,
             'preferred_name': cluster.backup_cluster_lead.preferred_name,
+            'show_full_name': cluster.backup_cluster_lead.show_full_name,
             'pronouns': cluster.backup_cluster_lead.pronouns,
             'show_pronouns': cluster.backup_cluster_lead.show_pronouns
         } if cluster.backup_cluster_lead and cluster.enable_backup_cluster_lead else None,

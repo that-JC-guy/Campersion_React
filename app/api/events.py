@@ -39,7 +39,17 @@ def serialize_event(event, include_camps=False):
         'creator_name': event.creator.name if event.creator else None,
         'creator_pronouns': event.creator.pronouns if event.creator else None,
         'creator_show_pronouns': event.creator.show_pronouns if event.creator else False,
-        'created_at': event.created_at.isoformat() if event.created_at else None
+        'created_at': event.created_at.isoformat() if event.created_at else None,
+        # Event options
+        'has_early_arrival': event.has_early_arrival,
+        'early_arrival_days': event.early_arrival_days,
+        'has_late_departure': event.has_late_departure,
+        'late_departure_days': event.late_departure_days,
+        'has_accessibility_assistance': event.has_accessibility_assistance,
+        'has_drinking_water': event.has_drinking_water,
+        'has_ice_available': event.has_ice_available,
+        'has_vehicle_access': event.has_vehicle_access,
+        'custom_event_options': event.custom_event_options
     }
 
     if include_camps:
@@ -331,6 +341,58 @@ def update_event(current_user, event_id):
 
     if 'board_email' in data:
         event.board_email = data['board_email'].strip() if data['board_email'] else None
+
+    # Event options
+    if 'has_early_arrival' in data:
+        event.has_early_arrival = bool(data['has_early_arrival'])
+        # Clear days if disabled
+        if not event.has_early_arrival:
+            event.early_arrival_days = None
+
+    if 'early_arrival_days' in data and event.has_early_arrival:
+        days = data['early_arrival_days']
+        if days is not None:
+            try:
+                event.early_arrival_days = int(days)
+                if event.early_arrival_days < 1:
+                    return error_response('Early arrival days must be at least 1'), 400
+            except (ValueError, TypeError):
+                return error_response('Invalid early_arrival_days'), 400
+        else:
+            event.early_arrival_days = None
+
+    if 'has_late_departure' in data:
+        event.has_late_departure = bool(data['has_late_departure'])
+        # Clear days if disabled
+        if not event.has_late_departure:
+            event.late_departure_days = None
+
+    if 'late_departure_days' in data and event.has_late_departure:
+        days = data['late_departure_days']
+        if days is not None:
+            try:
+                event.late_departure_days = int(days)
+                if event.late_departure_days < 1:
+                    return error_response('Late departure days must be at least 1'), 400
+            except (ValueError, TypeError):
+                return error_response('Invalid late_departure_days'), 400
+        else:
+            event.late_departure_days = None
+
+    if 'has_accessibility_assistance' in data:
+        event.has_accessibility_assistance = bool(data['has_accessibility_assistance'])
+
+    if 'has_drinking_water' in data:
+        event.has_drinking_water = bool(data['has_drinking_water'])
+
+    if 'has_ice_available' in data:
+        event.has_ice_available = bool(data['has_ice_available'])
+
+    if 'has_vehicle_access' in data:
+        event.has_vehicle_access = bool(data['has_vehicle_access'])
+
+    if 'custom_event_options' in data:
+        event.custom_event_options = data['custom_event_options'].strip() if data['custom_event_options'] else None
 
     db.session.commit()
 

@@ -133,17 +133,54 @@ function CampForm() {
         </ol>
       </nav>
 
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>
-          <i className="bi bi-flag me-2"></i>
-          {isEditing ? 'Edit Camp' : 'Create Camp'}
-        </h2>
-        <Link to={isEditing ? `/camps/${campId}` : '/camps'} className="btn btn-outline-secondary">
-          <i className="bi bi-arrow-left me-2"></i>Cancel
-        </Link>
-      </div>
+      <h2 className="mb-4">
+        <i className="bi bi-flag me-2"></i>
+        {isEditing ? 'Edit Camp' : 'Create Camp'}
+      </h2>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form id="campForm" onSubmit={handleSubmit(onSubmit)}>
+        {/* Form Actions - Top */}
+        <div className="d-flex gap-2 mb-4">
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={createMutation.isPending || updateMutation.isPending || (isEditing && !isDirty)}
+          >
+            {createMutation.isPending || updateMutation.isPending ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Saving...
+              </>
+            ) : (
+              <>
+                <i className="bi bi-save me-2"></i>
+                {isEditing ? 'Save Changes' : 'Create Camp'}
+              </>
+            )}
+          </button>
+
+          <Link
+            to={isEditing ? `/camps/${campId}` : '/camps'}
+            className="btn btn-outline-secondary"
+          >
+            Cancel
+          </Link>
+        </div>
+
+        {isEditing && !isDirty && (
+          <div className="alert alert-info">
+            <i className="bi bi-info-circle me-2"></i>
+            Make changes to the form to enable saving.
+          </div>
+        )}
+
+        {!isEditing && (
+          <div className="alert alert-info">
+            <i className="bi bi-info-circle me-2"></i>
+            After creating the camp, you will be automatically added as a camp manager.
+          </div>
+        )}
+
         {/* Basic Information */}
         <div className="card mb-4">
           <div className="card-header">
@@ -345,48 +382,6 @@ function CampForm() {
             </div>
           </div>
         </div>
-
-        {/* Form Actions */}
-        <div className="d-flex gap-2 mb-4">
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={createMutation.isPending || updateMutation.isPending || (isEditing && !isDirty)}
-          >
-            {createMutation.isPending || updateMutation.isPending ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Saving...
-              </>
-            ) : (
-              <>
-                <i className="bi bi-save me-2"></i>
-                {isEditing ? 'Save Changes' : 'Create Camp'}
-              </>
-            )}
-          </button>
-
-          <Link
-            to={isEditing ? `/camps/${campId}` : '/camps'}
-            className="btn btn-outline-secondary"
-          >
-            Cancel
-          </Link>
-        </div>
-
-        {isEditing && !isDirty && (
-          <div className="alert alert-info">
-            <i className="bi bi-info-circle me-2"></i>
-            Make changes to the form to enable saving.
-          </div>
-        )}
-
-        {!isEditing && (
-          <div className="alert alert-info">
-            <i className="bi bi-info-circle me-2"></i>
-            After creating the camp, you will be automatically added as a camp manager.
-          </div>
-        )}
       </form>
 
       {/* Member Role Management - Only shown when editing */}
@@ -456,6 +451,35 @@ function CampForm() {
           </div>
         </div>
       )}
+
+      {/* Form Actions - Bottom */}
+      <div className="d-flex gap-2 mb-4 mt-4">
+        <button
+          type="submit"
+          form="campForm"
+          className="btn btn-primary"
+          disabled={createMutation.isPending || updateMutation.isPending || (isEditing && !isDirty)}
+        >
+          {createMutation.isPending || updateMutation.isPending ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Saving...
+            </>
+          ) : (
+            <>
+              <i className="bi bi-save me-2"></i>
+              {isEditing ? 'Save Changes' : 'Create Camp'}
+            </>
+          )}
+        </button>
+
+        <Link
+          to={isEditing ? `/camps/${campId}` : '/camps'}
+          className="btn btn-outline-secondary"
+        >
+          Cancel
+        </Link>
+      </div>
     </div>
   );
 }

@@ -12,7 +12,10 @@ import {
   requestEmailChange,
   verifyEmailChange,
   getAllUsers,
-  changeUserRole
+  changeUserRole,
+  registerForEvent,
+  updateEventRegistration,
+  deleteEventRegistration
 } from '../api/services/profile';
 
 /**
@@ -118,6 +121,63 @@ export const useChangeUserRole = () => {
     },
     onError: (error) => {
       const message = error.response?.data?.error || 'Failed to change user role';
+      toast.error(message);
+    },
+  });
+};
+
+/**
+ * Hook to register for an event.
+ */
+export const useRegisterForEvent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: registerForEvent,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      toast.success(data.message || 'Successfully registered for event!');
+    },
+    onError: (error) => {
+      const message = error.response?.data?.error || 'Failed to register for event';
+      toast.error(message);
+    },
+  });
+};
+
+/**
+ * Hook to update event registration.
+ */
+export const useUpdateEventRegistration = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ registrationId, data }) => updateEventRegistration(registrationId, data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      toast.success(data.message || 'Registration updated successfully!');
+    },
+    onError: (error) => {
+      const message = error.response?.data?.error || 'Failed to update registration';
+      toast.error(message);
+    },
+  });
+};
+
+/**
+ * Hook to delete event registration.
+ */
+export const useDeleteEventRegistration = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteEventRegistration,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      toast.success(data.message || 'Registration deleted successfully!');
+    },
+    onError: (error) => {
+      const message = error.response?.data?.error || 'Failed to delete registration';
       toast.error(message);
     },
   });

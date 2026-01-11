@@ -9,7 +9,7 @@
 
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useProfile } from '../hooks/useProfile';
+import { useProfile, useUpdateEventRegistration } from '../hooks/useProfile';
 import { usePendingMemberRequests } from '../hooks/useCamps';
 import { usePendingCampRequests } from '../hooks/useEvents';
 
@@ -21,10 +21,32 @@ function Dashboard() {
 
   const approvedCamps = profileData?.camp_memberships?.approved || [];
   const pendingCampRequests = profileData?.camp_memberships?.pending || [];
+  const eventRegistrations = profileData?.event_registrations || [];
+
+  const updateRegistrationMutation = useUpdateEventRegistration();
 
   // Calculate total pending approvals
   const totalPendingApprovals = (pendingMembers?.pending_requests?.length || 0) + (pendingCamps?.pending_requests?.length || 0);
   const hasPendingApprovals = totalPendingApprovals > 0;
+
+  // Handler for updating event registration checkboxes
+  const handleRegistrationChange = (registrationId, field, value) => {
+    updateRegistrationMutation.mutate({
+      registrationId,
+      data: { [field]: value }
+    });
+  };
+
+  // Helper to format event dates
+  const formatEventDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
 
   return (
     <div className="container mt-4">
@@ -154,7 +176,7 @@ function Dashboard() {
                             <div className="d-flex justify-content-between align-items-start">
                               <Link
                                 to={`/camps/${membership.camp.id}`}
-                                className="text-decoration-none text-dark fw-bold"
+                                className="text-decoration-none fw-bold"
                               >
                                 {membership.camp.name}
                               </Link>
@@ -189,7 +211,7 @@ function Dashboard() {
                           <div className="card-body p-2">
                             <Link
                               to={`/camps/${membership.camp.id}`}
-                              className="text-decoration-none text-dark fw-bold"
+                              className="text-decoration-none fw-bold"
                             >
                               {membership.camp.name}
                             </Link>
@@ -213,6 +235,163 @@ function Dashboard() {
                   <h5 className="mt-3 text-muted">You're not a member of any camps yet</h5>
                   <Link to="/camps" className="btn btn-primary btn-sm mt-2">
                     <i className="bi bi-search me-2"></i>Browse Camps
+                  </Link>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* My Events Section */}
+      <div className="card">
+        <div className="card-header">
+          <h4 className="mb-0">
+            <img src="/Event.png" alt="Event" style={{ height: '48px', width: 'auto' }} className="me-2" />
+            My Events
+            {eventRegistrations.length > 0 && (
+              <span className="badge bg-secondary ms-2">{eventRegistrations.length}</span>
+            )}
+          </h4>
+        </div>
+        <div className="card-body">
+          {profileLoading ? (
+            <div className="text-center py-3">
+              <div className="spinner-border spinner-border-sm text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              {eventRegistrations.length > 0 ? (
+                <div className="row g-3">
+                  {eventRegistrations.map((registration) => (
+                    <div key={registration.id} className="col-md-6">
+                      <div className="card h-100">
+                        <div className="card-body">
+                          <h5 className="card-title">
+                            <Link to={`/events/${registration.event.id}`} className="text-decoration-none">
+                              {registration.event.title}
+                            </Link>
+                          </h5>
+                          <p className="card-text text-muted small mb-2">
+                            <i className="bi bi-calendar3 me-1"></i>
+                            {formatEventDate(registration.event.start_date)} - {formatEventDate(registration.event.end_date)}
+                          </p>
+                          {registration.event.location && (
+                            <p className="card-text text-muted small mb-3">
+                              <i className="bi bi-geo-alt me-1"></i>
+                              {registration.event.location}
+                            </p>
+                          )}
+
+                          {/* Event Access Status */}
+                          <div className="mt-3">
+                            <h6 className="small fw-bold mb-2">Event Access Status:</h6>
+
+                            {/* Ticket Checkbox */}
+                            <div className="form-check mb-2">
+                              <input
+                                className="form-check-input"
+                                type="checkbox"
+                                id={`ticket-${registration.id}`}
+                                checked={registration.has_ticket}
+                                onChange={(e) => handleRegistrationChange(
+                                  registration.id,
+                                  'has_ticket',
+                                  e.target.checked
+                                )}
+                                disabled={updateRegistrationMutation.isPending}
+                              />
+                              <label className="form-check-label small" htmlFor={`ticket-${registration.id}`}>
+                                <i className="bi bi-ticket-perforated me-1"></i>
+                                Ticket
+                              </label>
+                            </div>
+
+                            {/* Early Arrival - Only show if event has this option */}
+                            {registration.event.has_early_arrival && (
+                              <div className="form-check mb-2">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  id={`early-arrival-${registration.id}`}
+                                  checked={registration.opted_early_arrival}
+                                  onChange={(e) => handleRegistrationChange(
+                                    registration.id,
+                                    'opted_early_arrival',
+                                    e.target.checked
+                                  )}
+                                  disabled={updateRegistrationMutation.isPending}
+                                />
+                                <label className="form-check-label small" htmlFor={`early-arrival-${registration.id}`}>
+                                  <i className="bi bi-sunrise me-1"></i>
+                                  Early Arrival
+                                  {registration.event.early_arrival_days && (
+                                    <span className="text-muted"> ({registration.event.early_arrival_days} {registration.event.early_arrival_days === 1 ? 'day' : 'days'})</span>
+                                  )}
+                                </label>
+                              </div>
+                            )}
+
+                            {/* Late Departure - Only show if event has this option */}
+                            {registration.event.has_late_departure && (
+                              <div className="form-check mb-2">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  id={`late-departure-${registration.id}`}
+                                  checked={registration.opted_late_departure}
+                                  onChange={(e) => handleRegistrationChange(
+                                    registration.id,
+                                    'opted_late_departure',
+                                    e.target.checked
+                                  )}
+                                  disabled={updateRegistrationMutation.isPending}
+                                />
+                                <label className="form-check-label small" htmlFor={`late-departure-${registration.id}`}>
+                                  <i className="bi bi-sunset me-1"></i>
+                                  Late Departure
+                                  {registration.event.late_departure_days && (
+                                    <span className="text-muted"> ({registration.event.late_departure_days} {registration.event.late_departure_days === 1 ? 'day' : 'days'})</span>
+                                  )}
+                                </label>
+                              </div>
+                            )}
+
+                            {/* Vehicle Access - Only show if event has this option */}
+                            {registration.event.has_vehicle_access && (
+                              <div className="form-check">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  id={`vehicle-access-${registration.id}`}
+                                  checked={registration.opted_vehicle_access}
+                                  onChange={(e) => handleRegistrationChange(
+                                    registration.id,
+                                    'opted_vehicle_access',
+                                    e.target.checked
+                                  )}
+                                  disabled={updateRegistrationMutation.isPending}
+                                />
+                                <label className="form-check-label small" htmlFor={`vehicle-access-${registration.id}`}>
+                                  <i className="bi bi-car-front me-1"></i>
+                                  Vehicle Access
+                                </label>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <i className="bi bi-calendar-x" style={{ fontSize: '3rem', color: '#ccc' }}></i>
+                  <h5 className="mt-3 text-muted">You're not registered for any events yet</h5>
+                  <Link to="/events" className="btn btn-primary btn-sm mt-2">
+                    <i className="bi bi-search me-2"></i>Browse Events
                   </Link>
                 </div>
               )}

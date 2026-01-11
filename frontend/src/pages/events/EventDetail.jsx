@@ -8,15 +8,25 @@
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useEvent, useCancelEvent, useApproveCampForEvent, useRejectCampForEvent } from '../../hooks/useEvents';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProfile, useRegisterForEvent, useDeleteEventRegistration } from '../../hooks/useProfile';
 
 function EventDetail() {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { data: event, isLoading, error } = useEvent(parseInt(eventId));
   const { user } = useAuth();
+  const { data: profileData } = useProfile();
   const cancelMutation = useCancelEvent();
   const approveCampMutation = useApproveCampForEvent();
   const rejectCampMutation = useRejectCampForEvent();
+  const registerMutation = useRegisterForEvent();
+  const unregisterMutation = useDeleteEventRegistration();
+
+  // Check if user is already registered for this event
+  const userRegistration = profileData?.event_registrations?.find(
+    reg => reg.event.id === parseInt(eventId)
+  );
+  const isRegistered = !!userRegistration;
 
   const getStatusBadge = (status) => {
     const badges = {
@@ -57,6 +67,22 @@ function EventDetail() {
   const handleRejectCamp = (campId) => {
     if (window.confirm('Reject this camp request?')) {
       rejectCampMutation.mutate({ eventId: parseInt(eventId), campId });
+    }
+  };
+
+  const handleRegister = () => {
+    registerMutation.mutate({
+      event_id: parseInt(eventId),
+      has_ticket: false,
+      opted_early_arrival: false,
+      opted_late_departure: false,
+      opted_vehicle_access: false
+    });
+  };
+
+  const handleUnregister = () => {
+    if (window.confirm('Are you sure you want to remove this event from your events?')) {
+      unregisterMutation.mutate(userRegistration.id);
     }
   };
 
@@ -111,7 +137,26 @@ function EventDetail() {
           <Link to="/events" className="btn btn-outline-secondary">
             <i className="bi bi-arrow-left me-2"></i>Back
           </Link>
-          {isCreator && event.status === 'pending' && (
+          {user && !isCreator && event.status === 'approved' && (
+            isRegistered ? (
+              <button
+                className="btn btn-danger"
+                onClick={handleUnregister}
+                disabled={unregisterMutation.isPending}
+              >
+                <i className="bi bi-dash-circle me-2"></i>Remove from My Events
+              </button>
+            ) : (
+              <button
+                className="btn btn-success"
+                onClick={handleRegister}
+                disabled={registerMutation.isPending}
+              >
+                <i className="bi bi-plus-circle me-2"></i>Add to My Events
+              </button>
+            )
+          )}
+          {isCreator && (event.status === 'pending' || event.status === 'approved') && (
             <Link to={`/events/${eventId}/edit`} className="btn btn-primary">
               <i className="bi bi-pencil me-2"></i>Edit
             </Link>
@@ -181,6 +226,70 @@ function EventDetail() {
         </div>
       </div>
 
+      {/* Event Options and Amenities */}
+      {(event.has_early_arrival || event.has_late_departure || event.has_accessibility_assistance ||
+        event.has_drinking_water || event.has_ice_available || event.has_vehicle_access || event.custom_event_options) && (
+        <div className="card mb-4">
+          <div className="card-header">
+            <h5 className="mb-0"><i className="bi bi-gear me-2"></i>Event Options and Amenities</h5>
+          </div>
+          <div className="card-body">
+            <div className="row">
+              {event.has_early_arrival && (
+                <div className="col-md-6 mb-2">
+                  <i className="bi bi-check-circle text-success me-2"></i>
+                  <strong>Early Arrival</strong>
+                  {event.early_arrival_days && (
+                    <span className="text-muted"> ({event.early_arrival_days} {event.early_arrival_days === 1 ? 'day' : 'days'} before event)</span>
+                  )}
+                </div>
+              )}
+              {event.has_late_departure && (
+                <div className="col-md-6 mb-2">
+                  <i className="bi bi-check-circle text-success me-2"></i>
+                  <strong>Late Departure</strong>
+                  {event.late_departure_days && (
+                    <span className="text-muted"> ({event.late_departure_days} {event.late_departure_days === 1 ? 'day' : 'days'} after event)</span>
+                  )}
+                </div>
+              )}
+              {event.has_accessibility_assistance && (
+                <div className="col-md-6 mb-2">
+                  <i className="bi bi-check-circle text-success me-2"></i>
+                  <strong>Accessibility Assistance</strong>
+                </div>
+              )}
+              {event.has_drinking_water && (
+                <div className="col-md-6 mb-2">
+                  <i className="bi bi-check-circle text-success me-2"></i>
+                  <strong>Drinking Water Onsite</strong>
+                </div>
+              )}
+              {event.has_ice_available && (
+                <div className="col-md-6 mb-2">
+                  <i className="bi bi-check-circle text-success me-2"></i>
+                  <strong>Ice Available</strong>
+                </div>
+              )}
+              {event.has_vehicle_access && (
+                <div className="col-md-6 mb-2">
+                  <i className="bi bi-check-circle text-success me-2"></i>
+                  <strong>Vehicle Access</strong>
+                </div>
+              )}
+              {event.custom_event_options && event.custom_event_options.split(',').map((option, index) => (
+                option.trim() && (
+                  <div key={index} className="col-md-6 mb-2">
+                    <i className="bi bi-check-circle text-success me-2"></i>
+                    <strong>{option.trim()}</strong>
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Contact Information */}
       {(event.event_manager_email || event.safety_manager_email || event.business_manager_email || event.board_email) && (
         <div className="card mb-4">
@@ -246,7 +355,11 @@ function EventDetail() {
                     <div key={assoc.id} className="list-group-item">
                       <div className="d-flex justify-content-between align-items-center">
                         <div>
-                          <h6 className="mb-1">{assoc.camp.name}</h6>
+                          <h6 className="mb-1">
+                            <Link to={`/camps/${assoc.camp.id}`} className="text-decoration-none">
+                              {assoc.camp.name}
+                            </Link>
+                          </h6>
                           <p className="mb-1 text-muted small">{assoc.camp.description}</p>
                           <small className="text-muted">
                             Max Sites: {assoc.camp.max_sites} | Max People: {assoc.camp.max_people}
@@ -284,7 +397,11 @@ function EventDetail() {
                     <div key={assoc.id} className="list-group-item">
                       <div className="d-flex justify-content-between align-items-start">
                         <div>
-                          <h6 className="mb-1">{assoc.camp.name}</h6>
+                          <h6 className="mb-1">
+                            <Link to={`/camps/${assoc.camp.id}`} className="text-decoration-none">
+                              {assoc.camp.name}
+                            </Link>
+                          </h6>
                           <p className="mb-1 text-muted small">{assoc.camp.description}</p>
                           <small className="text-muted">
                             Max Sites: {assoc.camp.max_sites} | Max People: {assoc.camp.max_people}
@@ -313,7 +430,11 @@ function EventDetail() {
                     <div key={assoc.id} className="list-group-item">
                       <div className="d-flex justify-content-between align-items-start">
                         <div>
-                          <h6 className="mb-1">{assoc.camp.name}</h6>
+                          <h6 className="mb-1">
+                            <Link to={`/camps/${assoc.camp.id}`} className="text-decoration-none">
+                              {assoc.camp.name}
+                            </Link>
+                          </h6>
                           <p className="mb-1 text-muted small">{assoc.camp.description}</p>
                         </div>
                         <span className="badge bg-danger">Rejected</span>
@@ -343,7 +464,11 @@ function EventDetail() {
             <div className="list-group">
               {event.camps.approved.map((assoc) => (
                 <div key={assoc.id} className="list-group-item">
-                  <h6 className="mb-1">{assoc.camp.name}</h6>
+                  <h6 className="mb-1">
+                    <Link to={`/camps/${assoc.camp.id}`} className="text-decoration-none">
+                      {assoc.camp.name}
+                    </Link>
+                  </h6>
                   <p className="mb-1 text-muted small">{assoc.camp.description}</p>
                   {assoc.location && (
                     <p className="mb-0">

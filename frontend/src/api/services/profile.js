@@ -88,3 +88,46 @@ export const changeUserRole = async (userId, role) => {
   const response = await apiClient.put(`/users/${userId}/role`, { role });
   return response.data;
 };
+
+/**
+ * Register for an event.
+ *
+ * @param {Object} data - Registration data
+ * @param {number} data.event_id - Event ID
+ * @param {boolean} data.has_ticket - Has ticket
+ * @param {boolean} data.opted_early_arrival - Opted for early arrival
+ * @param {boolean} data.opted_late_departure - Opted for late departure
+ * @param {boolean} data.opted_vehicle_access - Opted for vehicle access
+ * @returns {Promise} API response
+ */
+export const registerForEvent = async (data) => {
+  const response = await apiClient.post('/users/me/event-registrations', data);
+  return response.data;
+};
+
+/**
+ * Update event registration.
+ *
+ * @param {number} registrationId - Registration ID
+ * @param {Object} data - Registration data
+ * @param {boolean} data.has_ticket - Has ticket
+ * @param {boolean} data.opted_early_arrival - Opted for early arrival
+ * @param {boolean} data.opted_late_departure - Opted for late departure
+ * @param {boolean} data.opted_vehicle_access - Opted for vehicle access
+ * @returns {Promise} API response
+ */
+export const updateEventRegistration = async (registrationId, data) => {
+  const response = await apiClient.put(`/users/me/event-registrations/${registrationId}`, data);
+  return response.data;
+};
+
+/**
+ * Delete event registration.
+ *
+ * @param {number} registrationId - Registration ID
+ * @returns {Promise} API response
+ */
+export const deleteEventRegistration = async (registrationId) => {
+  const response = await apiClient.delete(`/users/me/event-registrations/${registrationId}`);
+  return response.data;
+};

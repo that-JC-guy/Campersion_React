@@ -9,7 +9,7 @@
  * - Event associations (collapsible)
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
 import {
@@ -45,14 +45,38 @@ function CampDetail() {
 
   const clusters = clustersData?.clusters || [];
 
+  // Get initial collapsed state from sessionStorage or defaults
+  const getInitialCollapsedState = () => {
+    const storageKey = `campDetail_${campId}_collapsedSections`;
+    const stored = sessionStorage.getItem(storageKey);
+
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        // If parsing fails, use defaults
+      }
+    }
+
+    // Default: all sections collapsed except details
+    return {
+      details: false,  // Camp Details starts expanded
+      members: true,
+      inventory: true,
+      organization: true,
+      events: true,
+      memberManagement: true
+    };
+  };
+
   // Collapsible section states
-  const [collapsedSections, setCollapsedSections] = useState({
-    details: false,
-    members: false,
-    inventory: false,
-    organization: false,
-    events: false
-  });
+  const [collapsedSections, setCollapsedSections] = useState(getInitialCollapsedState);
+
+  // Save collapsed state to sessionStorage whenever it changes
+  useEffect(() => {
+    const storageKey = `campDetail_${campId}_collapsedSections`;
+    sessionStorage.setItem(storageKey, JSON.stringify(collapsedSections));
+  }, [collapsedSections, campId]);
 
   const toggleSection = (section) => {
     setCollapsedSections(prev => ({
@@ -68,6 +92,45 @@ function CampDetail() {
       day: 'numeric',
       year: 'numeric'
     });
+  };
+
+  // Helper function to get leadership roles for a user
+  const getUserLeadershipRoles = (userId) => {
+    const roles = [];
+
+    // Check camp-level roles
+    if (camp.enable_camp_lead && camp.camp_lead?.id === userId) {
+      roles.push('Camp Lead');
+    }
+    if (camp.enable_backup_camp_lead && camp.backup_camp_lead?.id === userId) {
+      roles.push('Backup Camp Lead');
+    }
+
+    // Check cluster-level roles
+    if (clusters && clusters.length > 0) {
+      clusters.forEach(cluster => {
+        if (cluster.enable_cluster_lead && cluster.cluster_lead?.id === userId) {
+          roles.push(`${cluster.name} Lead`);
+        }
+        if (cluster.enable_backup_cluster_lead && cluster.backup_cluster_lead?.id === userId) {
+          roles.push(`Backup ${cluster.name} Lead`);
+        }
+
+        // Check team-level roles within this cluster
+        if (cluster.teams && cluster.teams.length > 0) {
+          cluster.teams.forEach(team => {
+            if (team.enable_team_lead && team.team_lead?.id === userId) {
+              roles.push(`${team.name} Lead`);
+            }
+            if (team.enable_backup_team_lead && team.backup_team_lead?.id === userId) {
+              roles.push(`Backup ${team.name} Lead`);
+            }
+          });
+        }
+      });
+    }
+
+    return roles;
   };
 
   const handleRequestMembership = () => {
@@ -249,16 +312,21 @@ function CampDetail() {
         </div>
       </div>
 
-      {/* Membership Actions */}
+      {/* Membership Actions for Non-Members */}
       {user && !isMember && !isPending && (
-        <div className="alert alert-info">
+        <div className="alert alert-info d-flex justify-content-between align-items-center">
+          <div>
+            <i className="bi bi-info-circle me-2"></i>
+            <strong>Interested in joining this camp?</strong>
+            <p className="mb-0 mt-1">Request membership to access full camp details, view members, and see shared inventory.</p>
+          </div>
           <button
-            className="btn btn-primary"
+            className="btn btn-primary ms-3"
             onClick={handleRequestMembership}
             disabled={requestMembershipMutation.isPending}
           >
             <i className="bi bi-person-plus me-2"></i>
-            Request to Join Camp
+            Request to Join
           </button>
         </div>
       )}
@@ -266,7 +334,8 @@ function CampDetail() {
       {isPending && (
         <div className="alert alert-warning">
           <i className="bi bi-clock me-2"></i>
-          Your membership request is pending approval.
+          <strong>Your membership request is pending approval.</strong>
+          <p className="mb-0 mt-1">You'll be able to see full camp details once your request is approved.</p>
         </div>
       )}
 
@@ -326,26 +395,39 @@ function CampDetail() {
             </div>
 
             <div className="row">
-              <div className="col-md-3 fw-bold">Created:</div>
-              <div className="col-md-9">{formatDate(camp.created_at)}</div>
+              <div className="col-md-3 fw-bold">Next Event:</div>
+              <div className="col-md-9">
+                {camp.next_event ? (
+                  <Link to={`/events/${camp.next_event.id}`} className="text-decoration-none">
+                    <i className="bi bi-calendar-event me-2"></i>
+                    {camp.next_event.title}
+                    <small className="text-muted ms-2">
+                      ({formatDate(camp.next_event.start_date)} - {formatDate(camp.next_event.end_date)})
+                    </small>
+                  </Link>
+                ) : (
+                  <span className="text-muted">No upcoming events</span>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Members List - Collapsible, visible to all */}
-      <div className="card mb-3">
-        <div
-          className="card-header d-flex justify-content-between align-items-center"
-          style={{ cursor: 'pointer' }}
-          onClick={() => toggleSection('members')}
-        >
-          <h5 className="mb-0">
-            <i className="bi bi-people me-2"></i>Members
-            <span className="badge bg-secondary ms-2">{totalMembers}</span>
-          </h5>
-          <i className={`bi bi-chevron-${collapsedSections.members ? 'down' : 'up'}`}></i>
-        </div>
+      {/* Members List - Collapsible (Only visible to camp members) */}
+      {isMember && (
+        <div className="card mb-3">
+          <div
+            className="card-header d-flex justify-content-between align-items-center"
+            style={{ cursor: 'pointer' }}
+            onClick={() => toggleSection('members')}
+          >
+            <h5 className="mb-0">
+              <i className="bi bi-people me-2"></i>Members
+              <span className="badge bg-secondary ms-2">{totalMembers}</span>
+            </h5>
+            <i className={`bi bi-chevron-${collapsedSections.members ? 'down' : 'up'}`}></i>
+          </div>
         <div className={`collapse ${!collapsedSections.members ? 'show' : ''}`}>
           <div className="card-body">
             {camp.members && (
@@ -353,24 +435,38 @@ function CampDetail() {
                 {/* Managers */}
                 {camp.members.managers && camp.members.managers.length > 0 && (
                   <>
-                    <h6 className="text-primary">Managers ({camp.members.managers.length})</h6>
-                    <div className="list-group mb-3">
-                      {camp.members.managers.map((member) => (
-                        <div key={member.id} className="list-group-item">
-                          <div className="d-flex justify-content-between align-items-center">
-                            <div>
-                              <strong>{formatMemberNameWithPronouns(member, { usePreferredName: false })}</strong>
-                              {isMember && (
-                                <>
-                                  <br />
-                                  <small className="text-muted">{member.user.email}</small>
-                                </>
-                              )}
+                    <h6 className="text-primary mb-3">Managers ({camp.members.managers.length})</h6>
+                    <div className="row g-2 mb-4">
+                      {camp.members.managers.map((member) => {
+                        const leadershipRoles = getUserLeadershipRoles(member.user.id);
+                        return (
+                          <div key={member.id} className="col-md-3 col-sm-6">
+                            <div className="card h-100">
+                              <div className="card-body p-2">
+                                <div className="d-flex justify-content-between align-items-start mb-1">
+                                  <strong className="small">{formatMemberNameWithPronouns(member)}</strong>
+                                  <span className="badge bg-primary" style={{ fontSize: '0.65rem' }}>Manager</span>
+                                </div>
+                                {isMember && (
+                                  <small className="text-muted d-block" style={{ fontSize: '0.75rem' }}>
+                                    {member.user.email}
+                                  </small>
+                                )}
+                                {leadershipRoles.length > 0 && (
+                                  <div className="mt-1">
+                                    {leadershipRoles.map((role, idx) => (
+                                      <div key={idx} className="text-muted" style={{ fontSize: '0.7rem' }}>
+                                        <i className="bi bi-star-fill me-1" style={{ fontSize: '0.6rem' }}></i>
+                                        {role}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            <span className="badge bg-primary">Manager</span>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </>
                 )}
@@ -378,21 +474,35 @@ function CampDetail() {
                 {/* Regular Members */}
                 {camp.members.regular_members && camp.members.regular_members.length > 0 && (
                   <>
-                    <h6 className="text-success">Members ({camp.members.regular_members.length})</h6>
-                    <div className="list-group">
-                      {camp.members.regular_members.map((member) => (
-                        <div key={member.id} className="list-group-item">
-                          <div>
-                            <strong>{formatMemberNameWithPronouns(member, { usePreferredName: false })}</strong>
-                            {isMember && (
-                              <>
-                                <br />
-                                <small className="text-muted">{member.user.email}</small>
-                              </>
-                            )}
+                    <h6 className="text-success mb-3">Members ({camp.members.regular_members.length})</h6>
+                    <div className="row g-2">
+                      {camp.members.regular_members.map((member) => {
+                        const leadershipRoles = getUserLeadershipRoles(member.user.id);
+                        return (
+                          <div key={member.id} className="col-md-3 col-sm-6">
+                            <div className="card h-100">
+                              <div className="card-body p-2">
+                                <strong className="small d-block mb-1">{formatMemberNameWithPronouns(member)}</strong>
+                                {isMember && (
+                                  <small className="text-muted d-block" style={{ fontSize: '0.75rem' }}>
+                                    {member.user.email}
+                                  </small>
+                                )}
+                                {leadershipRoles.length > 0 && (
+                                  <div className="mt-1">
+                                    {leadershipRoles.map((role, idx) => (
+                                      <div key={idx} className="text-muted" style={{ fontSize: '0.7rem' }}>
+                                        <i className="bi bi-star-fill me-1" style={{ fontSize: '0.6rem' }}></i>
+                                        {role}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </>
                 )}
@@ -404,7 +514,8 @@ function CampDetail() {
             )}
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
       {/* My Volunteering - Clusters & Teams - Collapsible, visible to members */}
       {isMember && (camp.enable_camp_lead || camp.enable_backup_camp_lead || clusters.length > 0) && (
@@ -869,8 +980,8 @@ function CampDetail() {
         </div>
       )}
 
-      {/* Shared Inventory - Collapsible */}
-      {camp.shared_inventory && camp.shared_inventory.length > 0 && (
+      {/* Shared Inventory - Collapsible (Only visible to camp members) */}
+      {isMember && camp.shared_inventory && camp.shared_inventory.length > 0 && (
         <div className="card mb-3">
           <div
             className="card-header d-flex justify-content-between align-items-center"
@@ -936,7 +1047,7 @@ function CampDetail() {
                   <div key={member.id} className="list-group-item">
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
-                        <strong>{formatMemberNameWithPronouns(member, { usePreferredName: false })}</strong>
+                        <strong>{formatMemberNameWithPronouns(member)}</strong>
                         <br />
                         <small className="text-muted">{member.user.email}</small>
                       </div>

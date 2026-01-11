@@ -9,7 +9,7 @@ from flask import request
 from app.api import api_bp
 from app.api.errors import success_response, error_response
 from app.api.decorators import jwt_required_with_user, jwt_required_role
-from app.models import User, UserRole, CampMember, AssociationStatus
+from app.models import User, UserRole, CampMember, AssociationStatus, EventRegistration
 from app import db
 from app.auth.email import send_email_change_verification
 
@@ -72,6 +72,33 @@ def serialize_camp_membership(membership):
     }
 
 
+def serialize_event_registration(registration):
+    """Serialize event registration to dictionary."""
+    return {
+        'id': registration.id,
+        'event': {
+            'id': registration.event.id,
+            'title': registration.event.title,
+            'description': registration.event.description,
+            'location': registration.event.location,
+            'start_date': registration.event.start_date.isoformat() if registration.event.start_date else None,
+            'end_date': registration.event.end_date.isoformat() if registration.event.end_date else None,
+            'status': registration.event.status,
+            'has_early_arrival': registration.event.has_early_arrival,
+            'early_arrival_days': registration.event.early_arrival_days,
+            'has_late_departure': registration.event.has_late_departure,
+            'late_departure_days': registration.event.late_departure_days,
+            'has_vehicle_access': registration.event.has_vehicle_access
+        },
+        'has_ticket': registration.has_ticket,
+        'opted_early_arrival': registration.opted_early_arrival,
+        'opted_late_departure': registration.opted_late_departure,
+        'opted_vehicle_access': registration.opted_vehicle_access,
+        'created_at': registration.created_at.isoformat() if registration.created_at else None,
+        'updated_at': registration.updated_at.isoformat() if registration.updated_at else None
+    }
+
+
 @api_bp.route('/users/me/profile', methods=['GET'])
 @jwt_required_with_user
 def get_my_profile(current_user):
@@ -95,13 +122,19 @@ def get_my_profile(current_user):
         status=AssociationStatus.PENDING.value
     ).all()
 
+    # Get event registrations
+    event_registrations = EventRegistration.query.filter_by(
+        user_id=current_user.id
+    ).all()
+
     return success_response(data={
         'profile': serialize_user_profile(current_user),
         'oauth_providers': [serialize_oauth_provider(p) for p in oauth_providers],
         'camp_memberships': {
             'approved': [serialize_camp_membership(m) for m in approved_camps],
             'pending': [serialize_camp_membership(m) for m in pending_camps]
-        }
+        },
+        'event_registrations': [serialize_event_registration(r) for r in event_registrations]
     })
 
 
@@ -345,3 +378,135 @@ def change_user_role(current_user, user_id):
         data={'user': serialize_user_profile(user)},
         message=f'User role updated to {new_role}'
     )
+
+
+@api_bp.route('/users/me/event-registrations', methods=['POST'])
+@jwt_required_with_user
+def register_for_event(current_user):
+    """
+    Register current user for an event.
+
+    Request body:
+        {
+            "event_id": 1,
+            "has_ticket": false,
+            "opted_early_arrival": false,
+            "opted_late_departure": false,
+            "opted_vehicle_access": false
+        }
+
+    Returns:
+        201: Event registration created
+        400: Validation error or already registered
+    """
+    from app.models import Event
+
+    data = request.get_json()
+    event_id = data.get('event_id')
+
+    if not event_id:
+        return error_response('Event ID is required'), 400
+
+    # Check if event exists
+    event = Event.query.get(event_id)
+    if not event:
+        return error_response('Event not found'), 404
+
+    # Check if already registered
+    existing = EventRegistration.query.filter_by(
+        user_id=current_user.id,
+        event_id=event_id
+    ).first()
+
+    if existing:
+        return error_response('Already registered for this event'), 400
+
+    # Create registration
+    registration = EventRegistration(
+        user_id=current_user.id,
+        event_id=event_id,
+        has_ticket=data.get('has_ticket', False),
+        opted_early_arrival=data.get('opted_early_arrival', False),
+        opted_late_departure=data.get('opted_late_departure', False),
+        opted_vehicle_access=data.get('opted_vehicle_access', False)
+    )
+
+    db.session.add(registration)
+    db.session.commit()
+
+    return success_response(
+        data={'registration': serialize_event_registration(registration)},
+        message='Successfully registered for event'
+    ), 201
+
+
+@api_bp.route('/users/me/event-registrations/<int:registration_id>', methods=['PUT'])
+@jwt_required_with_user
+def update_event_registration(current_user, registration_id):
+    """
+    Update an event registration.
+
+    Request body:
+        {
+            "has_ticket": true,
+            "opted_early_arrival": true,
+            "opted_late_departure": false,
+            "opted_vehicle_access": true
+        }
+
+    Returns:
+        200: Event registration updated
+        403: Not authorized
+        404: Registration not found
+    """
+    registration = EventRegistration.query.get(registration_id)
+
+    if not registration:
+        return error_response('Registration not found'), 404
+
+    if registration.user_id != current_user.id:
+        return error_response('Not authorized to update this registration'), 403
+
+    data = request.get_json()
+
+    # Update fields
+    if 'has_ticket' in data:
+        registration.has_ticket = data['has_ticket']
+    if 'opted_early_arrival' in data:
+        registration.opted_early_arrival = data['opted_early_arrival']
+    if 'opted_late_departure' in data:
+        registration.opted_late_departure = data['opted_late_departure']
+    if 'opted_vehicle_access' in data:
+        registration.opted_vehicle_access = data['opted_vehicle_access']
+
+    db.session.commit()
+
+    return success_response(
+        data={'registration': serialize_event_registration(registration)},
+        message='Registration updated successfully'
+    )
+
+
+@api_bp.route('/users/me/event-registrations/<int:registration_id>', methods=['DELETE'])
+@jwt_required_with_user
+def delete_event_registration(current_user, registration_id):
+    """
+    Delete an event registration.
+
+    Returns:
+        200: Registration deleted
+        403: Not authorized
+        404: Registration not found
+    """
+    registration = EventRegistration.query.get(registration_id)
+
+    if not registration:
+        return error_response('Registration not found'), 404
+
+    if registration.user_id != current_user.id:
+        return error_response('Not authorized to delete this registration'), 403
+
+    db.session.delete(registration)
+    db.session.commit()
+
+    return success_response(message='Registration deleted successfully')

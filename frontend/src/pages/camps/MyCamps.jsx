@@ -62,7 +62,11 @@ function MyCamps() {
                 <div className="card h-100 shadow-sm">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-start mb-2">
-                      <h5 className="card-title mb-0">{membership.camp.name}</h5>
+                      <h5 className="card-title mb-0">
+                        <Link to={`/camps/${membership.camp.id}`} className="text-decoration-none">
+                          {membership.camp.name}
+                        </Link>
+                      </h5>
                       {membership.role === 'manager' && (
                         <span className="badge bg-primary">Manager</span>
                       )}
@@ -107,7 +111,11 @@ function MyCamps() {
               <div key={membership.id} className="col-md-6 col-lg-4 mb-3">
                 <div className="card h-100 shadow-sm border-warning">
                   <div className="card-body">
-                    <h5 className="card-title">{membership.camp.name}</h5>
+                    <h5 className="card-title">
+                      <Link to={`/camps/${membership.camp.id}`} className="text-decoration-none">
+                        {membership.camp.name}
+                      </Link>
+                    </h5>
                     {membership.camp.description && (
                       <p className="card-text text-muted small">
                         {membership.camp.description.length > 100

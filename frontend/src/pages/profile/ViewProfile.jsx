@@ -268,7 +268,11 @@ function ViewProfile() {
                     <li key={membership.id} className="list-group-item">
                       <div className="d-flex justify-content-between align-items-center">
                         <div>
-                          <strong>{membership.camp.name}</strong>
+                          <strong>
+                            <Link to={`/camps/${membership.camp.id}`} className="text-decoration-none">
+                              {membership.camp.name}
+                            </Link>
+                          </strong>
                           <p className="mb-0 small text-muted">{membership.camp.description}</p>
                         </div>
                         <div className="text-end">
@@ -292,7 +296,11 @@ function ViewProfile() {
                     <li key={membership.id} className="list-group-item">
                       <div className="d-flex justify-content-between align-items-center">
                         <div>
-                          <strong>{membership.camp.name}</strong>
+                          <strong>
+                            <Link to={`/camps/${membership.camp.id}`} className="text-decoration-none">
+                              {membership.camp.name}
+                            </Link>
+                          </strong>
                           <p className="mb-0 small text-muted">{membership.camp.description}</p>
                         </div>
                         <span className="badge bg-warning text-dark">Pending</span>
