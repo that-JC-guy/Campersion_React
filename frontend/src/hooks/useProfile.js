@@ -15,7 +15,8 @@ import {
   changeUserRole,
   registerForEvent,
   updateEventRegistration,
-  deleteEventRegistration
+  deleteEventRegistration,
+  deleteOwnAccount
 } from '../api/services/profile';
 
 /**
@@ -178,6 +179,27 @@ export const useDeleteEventRegistration = () => {
     },
     onError: (error) => {
       const message = error.response?.data?.error || 'Failed to delete registration';
+      toast.error(message);
+    },
+  });
+};
+
+/**
+ * Hook to delete current user's own account.
+ */
+export const useDeleteOwnAccount = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteOwnAccount,
+    onSuccess: (data) => {
+      // Clear all queries
+      queryClient.clear();
+      toast.success(data.message || 'Account deleted successfully');
+      // The auth context will handle logout and redirect
+    },
+    onError: (error) => {
+      const message = error.response?.data?.error || 'Failed to delete account';
       toast.error(message);
     },
   });

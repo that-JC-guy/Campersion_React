@@ -510,3 +510,38 @@ def delete_event_registration(current_user, registration_id):
     db.session.commit()
 
     return success_response(message='Registration deleted successfully')
+
+
+@api_bp.route('/users/me', methods=['DELETE'])
+@jwt_required_with_user
+def delete_own_account(current_user):
+    """
+    Delete current user's own account.
+
+    This is a self-service account deletion that permanently removes the user
+    and all associated data including:
+    - Camp memberships
+    - Event registrations
+    - Inventory items
+    - OAuth provider links
+
+    Returns:
+        200: Account deleted successfully
+    """
+    user_email = current_user.email
+
+    try:
+        # The cascade delete on relationships will automatically remove:
+        # - OAuthProvider entries
+        # - CampMember entries
+        # - EventRegistration entries
+        # - InventoryItem entries
+        db.session.delete(current_user)
+        db.session.commit()
+
+        return success_response(
+            message=f'Your account ({user_email}) has been permanently deleted'
+        )
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'Failed to delete account: {str(e)}', 500)

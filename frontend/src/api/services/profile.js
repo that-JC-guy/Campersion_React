@@ -131,3 +131,13 @@ export const deleteEventRegistration = async (registrationId) => {
   const response = await apiClient.delete(`/users/me/event-registrations/${registrationId}`);
   return response.data;
 };
+
+/**
+ * Delete current user's own account.
+ *
+ * @returns {Promise} API response
+ */
+export const deleteOwnAccount = async () => {
+  const response = await apiClient.delete('/users/me');
+  return response.data;
+};

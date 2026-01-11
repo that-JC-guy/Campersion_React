@@ -12,6 +12,7 @@ import {
   createUser,
   suspendUser,
   reactivateUser,
+  deleteUser,
   changeEventStatus,
   getAllAssociations,
   revokeAssociation,
@@ -94,6 +95,26 @@ export const useReactivateUser = () => {
     },
     onError: (error) => {
       const message = error.response?.data?.error || 'Failed to reactivate user';
+      toast.error(message);
+    },
+  });
+};
+
+/**
+ * Hook to delete a user (Global Admin only).
+ */
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteUser,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] });
+      toast.success(data.message || 'User deleted successfully!');
+    },
+    onError: (error) => {
+      const message = error.response?.data?.error || 'Failed to delete user';
       toast.error(message);
     },
   });

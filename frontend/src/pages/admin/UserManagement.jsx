@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useAllUsers, useSuspendUser, useReactivateUser } from '../../hooks/useAdmin';
+import { useAllUsers, useSuspendUser, useReactivateUser, useDeleteUser } from '../../hooks/useAdmin';
 import { useAuth } from '../../contexts/AuthContext';
 import StatusBadge from '../../components/admin/StatusBadge';
 import ConfirmActionModal from '../../components/admin/ConfirmActionModal';
@@ -30,6 +30,7 @@ function UserManagement() {
   const { data: usersData, isLoading, error } = useAllUsers(filters);
   const suspendUserMutation = useSuspendUser();
   const reactivateUserMutation = useReactivateUser();
+  const deleteUserMutation = useDeleteUser();
 
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
@@ -65,6 +66,18 @@ function UserManagement() {
     });
   };
 
+  const handleDeleteClick = (user) => {
+    setConfirmAction({
+      type: 'delete',
+      user,
+      title: 'Delete User Account',
+      message: `Are you sure you want to permanently delete ${user.name} (${user.email})? This action cannot be undone and will remove all user data.`,
+      confirmText: 'Delete Permanently',
+      confirmVariant: 'danger',
+      requireReason: false
+    });
+  };
+
   const handleConfirmAction = async () => {
     if (!confirmAction) return;
 
@@ -72,6 +85,8 @@ function UserManagement() {
       await suspendUserMutation.mutateAsync(confirmAction.user.id);
     } else if (confirmAction.type === 'reactivate') {
       await reactivateUserMutation.mutateAsync(confirmAction.user.id);
+    } else if (confirmAction.type === 'delete') {
+      await deleteUserMutation.mutateAsync(confirmAction.user.id);
     }
   };
 
@@ -223,13 +238,24 @@ function UserManagement() {
                           Suspend
                         </button>
                       ) : (
-                        <button
-                          className="btn btn-sm btn-success"
-                          onClick={() => handleReactivateClick(user)}
-                        >
-                          <i className="bi bi-person-check me-1"></i>
-                          Reactivate
-                        </button>
+                        <div className="btn-group" role="group">
+                          <button
+                            className="btn btn-sm btn-success"
+                            onClick={() => handleReactivateClick(user)}
+                          >
+                            <i className="bi bi-person-check me-1"></i>
+                            Reactivate
+                          </button>
+                          {isGlobalAdmin && (
+                            <button
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleDeleteClick(user)}
+                            >
+                              <i className="bi bi-trash me-1"></i>
+                              Remove
+                            </button>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>

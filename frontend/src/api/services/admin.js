@@ -60,6 +60,16 @@ export const reactivateUser = async (userId) => {
 };
 
 /**
+ * Permanently delete a user account (Global Admin only).
+ * @param {number} userId - User ID to delete
+ * @returns {Promise} - Success message
+ */
+export const deleteUser = async (userId) => {
+  const response = await apiClient.delete(`/admin/users/${userId}`);
+  return response.data;
+};
+
+/**
  * Change event status (admin override).
  * @param {number} eventId - Event ID
  * @param {Object} data - Status data (status, reason)

@@ -8,11 +8,18 @@
  * - Camp memberships
  */
 
-import { Link } from 'react-router-dom';
-import { useProfile } from '../../hooks/useProfile';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useProfile, useDeleteOwnAccount } from '../../hooks/useProfile';
+import { useAuth } from '../../contexts/AuthContext';
 
 function ViewProfile() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const { data, isLoading, error } = useProfile();
+  const deleteAccountMutation = useDeleteOwnAccount();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState('');
 
   if (isLoading) {
     return (
@@ -57,6 +64,23 @@ function ViewProfile() {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const handleDeleteAccount = async () => {
+    if (confirmationEmail !== profile.email) {
+      return;
+    }
+
+    try {
+      await deleteAccountMutation.mutateAsync();
+      // Account deleted successfully, logout and redirect
+      logout();
+      navigate('/');
+    } catch (error) {
+      // Error is already handled by the mutation hook
+      setShowDeleteModal(false);
+      setConfirmationEmail('');
+    }
   };
 
   return (
@@ -310,6 +334,114 @@ function ViewProfile() {
                 </ul>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Section */}
+      <div className="card border-danger mb-4">
+        <div className="card-header bg-danger text-white">
+          <h5 className="mb-0"><i className="bi bi-exclamation-triangle me-2"></i>Danger Zone</h5>
+        </div>
+        <div className="card-body">
+          <h6 className="text-danger">Delete Your Account</h6>
+          <p className="text-muted mb-3">
+            Once you delete your account, there is no going back. This action will permanently delete:
+          </p>
+          <ul className="text-muted mb-3">
+            <li>Your profile information</li>
+            <li>All camp memberships (approved and pending)</li>
+            <li>All event registrations</li>
+            <li>Your complete inventory</li>
+            <li>All linked OAuth providers</li>
+          </ul>
+          <button
+            className="btn btn-danger"
+            onClick={() => setShowDeleteModal(true)}
+          >
+            <i className="bi bi-trash me-2"></i>Delete My Account
+          </button>
+        </div>
+      </div>
+
+      {/* Delete Account Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header bg-danger text-white">
+                <h5 className="modal-title">
+                  <i className="bi bi-exclamation-triangle me-2"></i>
+                  Confirm Account Deletion
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setConfirmationEmail('');
+                  }}
+                  disabled={deleteAccountMutation.isPending}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="alert alert-danger">
+                  <strong>Warning:</strong> This action cannot be undone!
+                </div>
+                <p>
+                  All of your data will be permanently deleted, including:
+                </p>
+                <ul>
+                  <li>Profile information</li>
+                  <li>Camp memberships (approved: {camp_memberships?.approved?.length || 0}, pending: {camp_memberships?.pending?.length || 0})</li>
+                  <li>Event registrations</li>
+                  <li>Complete inventory</li>
+                  <li>OAuth provider links</li>
+                </ul>
+                <p className="fw-bold mt-3">
+                  To confirm, please type your email address: <span className="text-primary">{profile.email}</span>
+                </p>
+                <input
+                  type="email"
+                  className="form-control"
+                  placeholder="Enter your email to confirm"
+                  value={confirmationEmail}
+                  onChange={(e) => setConfirmationEmail(e.target.value)}
+                  disabled={deleteAccountMutation.isPending}
+                />
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setConfirmationEmail('');
+                  }}
+                  disabled={deleteAccountMutation.isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={handleDeleteAccount}
+                  disabled={confirmationEmail !== profile.email || deleteAccountMutation.isPending}
+                >
+                  {deleteAccountMutation.isPending ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-trash me-2"></i>
+                      Permanently Delete Account
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

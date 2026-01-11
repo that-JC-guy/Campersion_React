@@ -289,6 +289,46 @@ def reactivate_user(current_user, user_id):
         return error_response(f'Failed to reactivate user: {str(e)}', 500)
 
 
+@api_bp.route('/admin/users/<int:user_id>', methods=['DELETE'])
+@jwt_required_role(UserRole.GLOBAL_ADMIN)
+def delete_user(current_user, user_id):
+    """
+    Permanently delete a user account.
+
+    This is a hard delete that removes the user and cascades to related data.
+    Should only be used for suspended accounts or spam/test accounts.
+
+    Requires: Global Admin role only
+    """
+    user = User.query.get(user_id)
+    if not user:
+        return error_response('User not found', 404)
+
+    # Prevent self-deletion
+    if user.id == current_user.id:
+        return error_response('You cannot delete your own account', 403)
+
+    # Prevent deleting equal or higher privilege users
+    if user.has_role_or_higher(UserRole[current_user.role.upper().replace(' ', '_')]):
+        return error_response('You cannot delete a user with equal or higher privileges', 403)
+
+    # Recommend suspending instead of deleting active users
+    if user.is_active:
+        return error_response('Cannot delete an active user. Please suspend the user first.', 400)
+
+    user_email = user.email
+
+    try:
+        db.session.delete(user)
+        db.session.commit()
+        return success_response(
+            message=f'User {user_email} has been permanently deleted'
+        )
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'Failed to delete user: {str(e)}', 500)
+
+
 @api_bp.route('/admin/events/<int:event_id>/status', methods=['PUT'])
 @jwt_required_role(UserRole.SITE_ADMIN)
 def change_event_status(current_user, event_id):
